@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Vocab Match</title>
+<style>
+  *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{ --bg:#f3f4f6; --card:#ffffff; --ink:#1f2937; --muted:#9ca3af; --line:#eef2f7; --accent:#6366f1; }
+  html,body{ height:100%; }
+  body{ font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Segoe UI",Roboto,sans-serif;
+    background:#e5e7eb; color:var(--ink); display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  #app{ width:100%; max-width:430px; height:100vh; max-height:930px; background:var(--bg);
+    position:relative; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 30px 80px rgba(0,0,0,.25); }
+  @media(min-width:480px){ #app{ height:910px; border-radius:34px; } }
+  .screen{ position:absolute; inset:0; display:flex; flex-direction:column; background:var(--bg); }
+  .hidden{ display:none !important; }
+  .scroll{ flex:1; overflow-y:auto; }
+  .ic{ display:inline-flex; align-items:center; justify-content:center; }
+
+  /* header */
+  .top{ display:flex; align-items:center; justify-content:space-between; padding:52px 22px 14px; background:var(--bg); }
+  .top .title{ display:flex; align-items:center; gap:8px; font-size:22px; font-weight:900; letter-spacing:-.3px;
+    background:none; border:none; color:inherit; cursor:pointer; padding:6px 8px; border-radius:12px; }
+  .top .title:active{ background:#e9ebf0; }
+  .top .title .bk{ color:var(--accent); }
+  .top .title .chev{ font-size:13px; color:#a0a6b0; margin-left:-2px; }
+  .langback{ position:absolute; inset:0; z-index:40; }
+  .langmenu{ position:absolute; top:92px; left:50%; transform:translateX(-50%); z-index:50; width:270px;
+    background:#fff; border-radius:18px; box-shadow:0 14px 40px rgba(17,24,39,.2); padding:8px;
+    animation:menupop .16s ease; }
+  @keyframes menupop{ from{ opacity:0; transform:translate(-50%,-6px); } to{ opacity:1; transform:translate(-50%,0); } }
+  .langmenu a{ display:flex; align-items:center; gap:12px; padding:12px 12px; border-radius:13px;
+    text-decoration:none; color:#1f2937; font-weight:700; font-size:15px; }
+  .langmenu a:active{ background:#f1f5f9; }
+  .langmenu a.cur{ background:#eef0ff; }
+  .langmenu .lb{ width:34px; height:34px; border-radius:11px; flex-shrink:0; color:#fff; font-weight:800;
+    font-size:14px; display:flex; align-items:center; justify-content:center; }
+  .langmenu a.cur::after{ content:'✓'; margin-left:auto; color:var(--accent); font-weight:900; }
+  .rbtn{ width:46px; height:46px; border-radius:999px; border:none; cursor:pointer; background:#eef0f4; color:#6b7280;
+    font-size:20px; display:flex; align-items:center; justify-content:center; }
+  .rbtn.plus{ background:#e7e9ff; color:var(--accent); font-size:26px; font-weight:400; }
+  .rbtn:active{ transform:scale(.92); }
+
+  /* section labels */
+  .slabel{ display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#9199a4;
+    letter-spacing:1.5px; margin:18px 24px 12px; }
+  .slabel .e{ font-size:15px; }
+
+  /* today's review card */
+  .review{ margin:0 22px; border-radius:26px; padding:26px 24px; color:#fff; position:relative; overflow:hidden;
+    background:linear-gradient(120deg,#f5443a,#ff7a3d); box-shadow:0 16px 34px rgba(244,68,58,.32);
+    display:flex; justify-content:space-between; align-items:flex-start; }
+  .review h2{ font-size:27px; font-weight:900; }
+  .review p{ font-size:12.5px; opacity:.92; margin-top:4px; font-weight:600; }
+  .review .start{ margin-top:22px; display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.22);
+    border:none; color:#fff; font-weight:800; font-size:13px; padding:11px 18px; border-radius:999px; cursor:pointer; letter-spacing:.5px; }
+  .review .start:active{ background:rgba(255,255,255,.34); }
+  .review .num{ text-align:right; }
+  .review .num b{ font-size:52px; font-weight:900; line-height:1; display:block; }
+  .review .num span{ font-size:11px; font-weight:800; letter-spacing:2px; opacity:.9; }
+  .review.empty{ background:linear-gradient(120deg,#cbd5e1,#94a3b8); box-shadow:none; }
+
+  /* deck card */
+  .decks{ padding:0 22px 8px; }
+  .deck{ position:relative; background:var(--card); border-radius:22px; padding:20px 20px 18px 26px; margin-bottom:16px;
+    box-shadow:0 6px 18px rgba(17,24,39,.06); overflow:hidden; }
+  .deck .bar{ position:absolute; left:0; top:0; bottom:0; width:7px; }
+  .deck .edit{ position:absolute; top:8px; right:8px; color:#9aa2ad; cursor:pointer; font-size:20px; background:none; border:none; padding:10px; line-height:1; }
+  .deck .edit:active{ color:#6b7280; }
+  .deck h3{ font-size:21px; font-weight:800; }
+  .deck .d{ color:#7a828e; font-size:13px; margin-top:5px; font-weight:600; }
+  .deck .row{ display:flex; align-items:center; gap:10px; margin-top:16px; }
+  .pill{ background:#f1f3f7; color:#8a919c; font-weight:700; font-size:12.5px; padding:5px 12px; border-radius:999px; }
+  .pill.due{ background:#fdecec; color:#ef4444; display:inline-flex; align-items:center; gap:4px; }
+  .deck .play{ margin-left:auto; width:52px; height:52px; border-radius:999px; border:none; cursor:pointer; color:#fff;
+    font-size:19px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(99,102,241,.32); }
+  .deck .play:active{ transform:scale(.9); }
+
+  /* ad space */
+  .ad{ margin-top:auto; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:#e9ebef;
+    color:#aab0ba; font-size:12px; font-weight:800; letter-spacing:2px; position:relative; }
+  .ad .x{ position:absolute; right:14px; color:#b8bec8; cursor:pointer; border:none; background:none; font-size:16px; }
+
+  /* ---------- GAME ---------- */
+  .g-head{ padding:52px 20px 8px; display:flex; align-items:center; justify-content:space-between; z-index:20; }
+  .icon-btn{ width:44px; height:44px; border-radius:999px; border:none; background:#fff; cursor:pointer; font-size:20px;
+    color:#475569; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .g-tag{ text-align:right; }
+  .g-tag .p{ font-size:11px; font-weight:900; letter-spacing:1px; padding:4px 10px; border-radius:8px; background:#eef0ff; color:var(--accent); }
+  .g-tag .prog{ display:block; font-size:12px; color:var(--muted); font-weight:800; margin-top:4px; }
+  .tint{ position:absolute; inset:0; pointer-events:none; transition:background .1s; z-index:1; }
+  .stage{ flex:1; display:flex; align-items:center; justify-content:center; position:relative; padding:0 16px 16px; perspective:1400px; z-index:10; }
+  .card{ position:absolute; width:100%; max-width:340px; aspect-ratio:0.72; cursor:grab; transform-style:preserve-3d; user-select:none; }
+  .card:active{ cursor:grabbing; }
+  .face{ position:absolute; inset:0; border-radius:28px; backface-visibility:hidden; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:26px; text-align:center; box-shadow:0 20px 50px rgba(15,23,42,.18); }
+  .face.front{ background:#fff; border:1px solid #f1f5f9; }
+  .face.back{ color:#fff; transform:rotateY(180deg); text-shadow:0 1px 3px rgba(0,0,0,.28); }
+  .front .word{ font-size:38px; font-weight:800; line-height:1.25; color:#1f2937; }
+  .front .word.sm{ font-size:23px; font-weight:700; line-height:1.45; padding:0 4px; }
+  .back .main{ font-size:60px; font-weight:800; line-height:1.1; }
+  .back .main.sm{ font-size:29px; font-weight:700; line-height:1.4; }
+  .back .pin{ margin-top:14px; font-size:22px; font-weight:600; opacity:.96; }
+  .spk{ border:none; background:rgba(255,255,255,.3); color:#fff; border-radius:999px; cursor:pointer;
+    min-width:40px; min-height:40px; padding:9px; font-size:17px; line-height:1; vertical-align:middle; margin-left:8px; box-sizing:border-box; }
+  .spk:active{ background:rgba(255,255,255,.5); }
+  .back .exh .spk{ min-width:36px; min-height:36px; font-size:14px; padding:8px; margin-left:6px; }
+  .back .ex{ margin-top:20px; width:100%; background:rgba(0,0,0,.1); border-radius:16px; padding:15px 16px; }
+  .back .ex .exh{ font-size:17px; font-weight:600; line-height:1.45; }
+  .back .ex .exp{ font-size:13.5px; opacity:.95; margin-top:6px; }
+  .back .ex .exe{ font-size:13px; opacity:1; margin-top:8px; }
+  .lvl{ position:absolute; bottom:52px; display:flex; gap:6px; }
+  .lvl i{ width:8px; height:8px; border-radius:999px; background:#e2e8f0; }
+  .lvl i.on{ background:#34d399; }
+  .flip-hint{ position:absolute; bottom:24px; font-size:11px; letter-spacing:2px; color:#cbd5e1; font-weight:800; animation:pul 1.6s infinite; }
+  @keyframes pul{ 0%,100%{opacity:.4} 50%{opacity:1} }
+  .stamp{ position:absolute; top:26px; font-size:24px; font-weight:900; padding:6px 13px; border:4px solid; border-radius:12px; opacity:0; transition:opacity .1s; }
+  .stamp.got{ left:26px; color:#10b981; border-color:#10b981; transform:rotate(-14deg); }
+  .stamp.forgot{ right:26px; color:#f43f5e; border-color:#f43f5e; transform:rotate(14deg); }
+  .g-actions{ display:flex; align-items:flex-start; justify-content:center; gap:26px; padding-bottom:34px; z-index:20; }
+  .fabwrap{ display:flex; flex-direction:column; align-items:center; gap:7px; }
+  .fabwrap span{ font-size:11px; font-weight:700; color:#9ca3af; }
+  .fab{ border:none; border-radius:999px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 20px rgba(0,0,0,.12); transition:transform .12s; }
+  .fab:active{ transform:scale(.9); }
+  .fab.big{ width:64px; height:64px; font-size:28px; } .fab.mid{ width:50px; height:50px; font-size:20px; }
+  .fab.no{ color:#f43f5e; } .fab.yes{ color:#10b981; } .fab.flip{ color:var(--accent); }
+  .done-card{ width:88%; max-width:330px; background:#fff; border-radius:28px; padding:34px 26px; text-align:center; box-shadow:0 20px 50px rgba(15,23,42,.15); animation:pop .4s cubic-bezier(.175,.885,.32,1.275); }
+  @keyframes pop{ from{ transform:scale(.9); opacity:0 } to{ transform:scale(1); opacity:1 } }
+  .done-card h2{ font-size:23px; font-weight:900; margin-bottom:20px; }
+  .done-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:26px; }
+  .done-grid .box{ border-radius:16px; padding:18px; } .done-grid .box b{ display:block; font-size:30px; font-weight:900; } .done-grid .box span{ font-size:11px; font-weight:800; }
+  .box.k{ background:#ecfdf5; color:#10b981; } .box.u{ background:#fff1f2; color:#f43f5e; }
+  .primary{ width:100%; padding:16px; border:none; border-radius:16px; background:#1f2937; color:#fff; font-weight:900; font-size:15px; cursor:pointer; }
+  .primary:active{ opacity:.85; }
+
+  /* ---------- FORM (add/settings/edit) ---------- */
+  .fhead{ display:flex; align-items:center; gap:14px; padding:52px 20px 14px; background:#fff; border-bottom:1px solid var(--line); }
+  .fhead h1{ font-size:19px; font-weight:900; }
+  .fhead .bk{ border:none; background:none; font-size:22px; cursor:pointer; color:#475569; }
+  .fbody{ padding:22px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-size:12px; font-weight:800; color:#7a828e; margin-bottom:6px; }
+  .field input, .field select, .field textarea{ width:100%; padding:13px 14px; border:1px solid #e5e7eb; border-radius:13px;
+    font-size:15px; background:#fff; outline:none; font-family:inherit; }
+  .field input:focus, .field textarea:focus, .field select:focus{ border-color:var(--accent); }
+  .field textarea{ resize:none; min-height:88px; }
+  .fbtn{ width:100%; padding:15px; border:none; border-radius:14px; background:var(--accent); color:#fff; font-weight:900; font-size:15px; cursor:pointer; margin-top:4px; }
+  .fbtn:active{ opacity:.9; }
+  .fbtn.ghost{ background:#fff; color:#64748b; border:1px solid #e5e7eb; }
+  .fbtn.danger{ background:#fff1f2; color:#f43f5e; }
+  .hint{ font-size:11.5px; color:#a0a6b0; margin-top:-8px; margin-bottom:14px; }
+  .erow{ display:flex; align-items:center; gap:12px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px; }
+  .erow .ef{ flex:1; min-width:0; cursor:pointer; } .erow .ef b{ font-size:15px; } .erow .ef span{ display:block; color:var(--muted); font-size:13px; }
+  .erow .del{ border:none; background:#fff1f2; color:#f43f5e; border-radius:10px; padding:8px 11px; font-size:14px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- HOME -->
+  <section id="home" class="screen">
+    <div class="top">
+      <button class="rbtn" id="gearBtn">⚙</button>
+      <button class="title" id="langBtn"><span class="bk">📖</span> <span id="langName">Match</span> <span class="chev">▾</span></button>
+      <button class="rbtn plus" id="addBtn">＋</button>
+    </div>
+    <div class="langback hidden" id="langBack"></div>
+    <div class="langmenu hidden" id="langMenu"></div>
+    <div class="scroll">
+      <div class="slabel"><span class="e">⚡</span> TODAY'S REVIEW</div>
+      <div class="review" id="review">
+        <div>
+          <h2>復習モード</h2>
+          <p>忘却曲線に基づいて出題</p>
+          <button class="start" id="startBtn">▶ START SESSION</button>
+        </div>
+        <div class="num"><b id="dueTotal">0</b><span>CARDS</span></div>
+      </div>
+      <div class="slabel"><span class="e">🕐</span> YOUR DECKS</div>
+      <div class="decks" id="deckList"></div>
+    </div>
+    <div class="ad" id="ad">AD SPACE <button class="x" id="adX">✕</button></div>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="screen hidden">
+    <div class="tint" id="tint"></div>
+    <div class="g-head">
+      <button class="icon-btn" id="gBack">←</button>
+      <div class="g-tag"><span class="p" id="gTag">DECK</span><span class="prog" id="gProg">0 / 0</span></div>
+    </div>
+    <div class="stage" id="stage"></div>
+    <div class="g-actions" id="gActions">
+      <div class="fabwrap"><button class="fab big no" id="noBtn">✕</button><span>まだ</span></div>
+      <div class="fabwrap"><button class="fab mid flip" id="flipBtn">↺</button><span>めくる</span></div>
+      <div class="fabwrap"><button class="fab big yes" id="yesBtn">♥</button><span>覚えた</span></div>
+    </div>
+  </section>
+
+  <!-- ADD -->
+  <section id="add" class="screen hidden">
+    <div class="fhead"><button class="bk" id="addBack">←</button><h1>単語を追加</h1></div>
+    <div class="scroll"><div class="fbody">
+      <div class="field" id="aDeckWrap"><label>追加先デッキ</label>
+        <select id="aDeck"></select></div>
+      <div class="field" id="aNewWrap" style="display:none"><label>新規デッキ名</label>
+        <input id="aNewTitle" placeholder="例：旅行フレーズ"></div>
+      <div class="field"><label>表（問題面）</label><input id="aFront" placeholder="例：economy / 経済"></div>
+      <div class="field"><label>裏（答え面）</label><input id="aBack" placeholder="例：economy / 经济"></div>
+      <div class="field"><label>ピンイン / 発音（任意）</label><input id="aSub" placeholder="例：jīng jì"></div>
+      <div class="field"><label>例文（任意）</label><input id="aEx" placeholder="例文（裏面に表示）"></div>
+      <div class="field"><label>例文のピンイン / 発音（任意）</label><input id="aExSub" placeholder="例文の読み"></div>
+      <div class="field"><label>例文の訳（任意）</label><input id="aExEn" placeholder="例文の意味"></div>
+      <button class="fbtn" id="aSave">追加する</button>
+    </div></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings" class="screen hidden">
+    <div class="fhead"><button class="bk" id="setBack">←</button><h1>設定</h1></div>
+    <div class="scroll"><div class="fbody">
+      <div class="field"><label>JSONインポート先</label><select id="iDeck"></select></div>
+      <div class="field"><label>単語データ（JSON配列）</label>
+        <textarea id="iText" placeholder='[{"front":"経済","back":"economy","ex":"...","exEn":"..."}]'></textarea></div>
+      <div class="hint">front / back は必須。sub(ピンイン)・ex(例文)・exEn(訳) は任意。</div>
+      <button class="fbtn" id="iRun">インポート実行</button>
+      <div style="height:22px"></div>
+      <button class="fbtn ghost" id="expBtn">全データをコピー（バックアップ）</button>
+      <div style="height:10px"></div>
+      <button class="fbtn danger" id="resetBtn">進捗と追加分をリセット</button>
+    </div></div>
+  </section>
+
+  <!-- EDIT -->
+  <section id="edit" class="screen hidden">
+    <div class="fhead"><button class="bk" id="edBack">←</button><h1 id="edTitle">編集</h1></div>
+    <div class="scroll"><div class="fbody">
+      <button class="fbtn" id="edAdd" style="margin-bottom:16px">＋ このデッキに追加</button>
+      <div id="edList"></div>
+    </div></div>
+  </section>
+</div>
+
+<script>
+const DEFAULT_DECKS = [{"id": "en-5", "title": "英検5級 · 基礎", "desc": "中学入門レベルの基本語（表=日本語）", "color": ["#22c55e", "#4ade80"], "type": "word", "cards": [{"id": 600001, "front": "りんご", "back": "apple", "level": 0, "next": 0}, {"id": 600002, "front": "本", "back": "book", "level": 0, "next": 0}, {"id": 600003, "front": "ペン", "back": "pen", "level": 0, "next": 0}, {"id": 600004, "front": "机", "back": "desk", "level": 0, "next": 0}, {"id": 600005, "front": "いす", "back": "chair", "level": 0, "next": 0}, {"id": 600006, "front": "かばん", "back": "bag", "level": 0, "next": 0}, {"id": 600007, "front": "学校", "back": "school", "level": 0, "next": 0}, {"id": 600008, "front": "先生", "back": "teacher", "level": 0, "next": 0}, {"id": 600009, "front": "生徒", "back": "student", "level": 0, "next": 0}, {"id": 600010, "front": "友達", "back": "friend", "level": 0, "next": 0}, {"id": 600011, "front": "家族", "back": "family", "level": 0, "next": 0}, {"id": 600012, "front": "母", "back": "mother", "level": 0, "next": 0}, {"id": 600013, "front": "父", "back": "father", "level": 0, "next": 0}, {"id": 600014, "front": "兄・弟", "back": "brother", "level": 0, "next": 0}, {"id": 600015, "front": "姉・妹", "back": "sister", "level": 0, "next": 0}, {"id": 600016, "front": "犬", "back": "dog", "level": 0, "next": 0}, {"id": 600017, "front": "ねこ", "back": "cat", "level": 0, "next": 0}, {"id": 600018, "front": "鳥", "back": "bird", "level": 0, "next": 0}, {"id": 600019, "front": "魚", "back": "fish", "level": 0, "next": 0}, {"id": 600020, "front": "花", "back": "flower", "level": 0, "next": 0}, {"id": 600021, "front": "水", "back": "water", "level": 0, "next": 0}, {"id": 600022, "front": "牛乳", "back": "milk", "level": 0, "next": 0}, {"id": 600023, "front": "パン", "back": "bread", "level": 0, "next": 0}, {"id": 600024, "front": "卵", "back": "egg", "level": 0, "next": 0}, {"id": 600025, "front": "米・ごはん", "back": "rice", "level": 0, "next": 0}, {"id": 600026, "front": "家", "back": "house", "level": 0, "next": 0}, {"id": 600027, "front": "部屋", "back": "room", "level": 0, "next": 0}, {"id": 600028, "front": "ドア", "back": "door", "level": 0, "next": 0}, {"id": 600029, "front": "窓", "back": "window", "level": 0, "next": 0}, {"id": 600030, "front": "箱", "back": "box", "level": 0, "next": 0}, {"id": 600031, "front": "車", "back": "car", "level": 0, "next": 0}, {"id": 600032, "front": "電車", "back": "train", "level": 0, "next": 0}, {"id": 600033, "front": "バス", "back": "bus", "level": 0, "next": 0}, {"id": 600034, "front": "自転車", "back": "bike", "level": 0, "next": 0}, {"id": 600035, "front": "公園", "back": "park", "level": 0, "next": 0}, {"id": 600036, "front": "駅", "back": "station", "level": 0, "next": 0}, {"id": 600037, "front": "店", "back": "shop", "level": 0, "next": 0}, {"id": 600038, "front": "都市・町", "back": "city", "level": 0, "next": 0}, {"id": 600039, "front": "町", "back": "town", "level": 0, "next": 0}, {"id": 600040, "front": "川", "back": "river", "level": 0, "next": 0}, {"id": 600041, "front": "走る", "back": "run", "level": 0, "next": 0}, {"id": 600042, "front": "歩く", "back": "walk", "level": 0, "next": 0}, {"id": 600043, "front": "食べる", "back": "eat", "level": 0, "next": 0}, {"id": 600044, "front": "飲む", "back": "drink", "level": 0, "next": 0}, {"id": 600045, "front": "読む", "back": "read", "level": 0, "next": 0}, {"id": 600046, "front": "書く", "back": "write", "level": 0, "next": 0}, {"id": 600047, "front": "遊ぶ・(競技を)する", "back": "play", "level": 0, "next": 0}, {"id": 600048, "front": "勉強する", "back": "study", "level": 0, "next": 0}, {"id": 600049, "front": "行く", "back": "go", "level": 0, "next": 0}, {"id": 600050, "front": "来る", "back": "come", "level": 0, "next": 0}, {"id": 600051, "front": "見る・会う", "back": "see", "level": 0, "next": 0}, {"id": 600052, "front": "見る", "back": "look", "level": 0, "next": 0}, {"id": 600053, "front": "聞く", "back": "listen", "level": 0, "next": 0}, {"id": 600054, "front": "話す", "back": "speak", "level": 0, "next": 0}, {"id": 600055, "front": "作る", "back": "make", "level": 0, "next": 0}, {"id": 600056, "front": "好む", "back": "like", "level": 0, "next": 0}, {"id": 600057, "front": "欲しい", "back": "want", "level": 0, "next": 0}, {"id": 600058, "front": "持っている", "back": "have", "level": 0, "next": 0}, {"id": 600059, "front": "開ける", "back": "open", "level": 0, "next": 0}, {"id": 600060, "front": "閉める", "back": "close", "level": 0, "next": 0}, {"id": 600061, "front": "大きい", "back": "big", "level": 0, "next": 0}, {"id": 600062, "front": "小さい", "back": "small", "level": 0, "next": 0}, {"id": 600063, "front": "新しい", "back": "new", "level": 0, "next": 0}, {"id": 600064, "front": "古い・年をとった", "back": "old", "level": 0, "next": 0}, {"id": 600065, "front": "よい", "back": "good", "level": 0, "next": 0}, {"id": 600066, "front": "悪い", "back": "bad", "level": 0, "next": 0}, {"id": 600067, "front": "暑い・熱い", "back": "hot", "level": 0, "next": 0}, {"id": 600068, "front": "寒い・冷たい", "back": "cold", "level": 0, "next": 0}, {"id": 600069, "front": "うれしい", "back": "happy", "level": 0, "next": 0}, {"id": 600070, "front": "悲しい", "back": "sad", "level": 0, "next": 0}, {"id": 600071, "front": "長い", "back": "long", "level": 0, "next": 0}, {"id": 600072, "front": "短い", "back": "short", "level": 0, "next": 0}, {"id": 600073, "front": "速い", "back": "fast", "level": 0, "next": 0}, {"id": 600074, "front": "遅い", "back": "slow", "level": 0, "next": 0}, {"id": 600075, "front": "高い", "back": "high", "level": 0, "next": 0}, {"id": 600076, "front": "赤", "back": "red", "level": 0, "next": 0}, {"id": 600077, "front": "青", "back": "blue", "level": 0, "next": 0}, {"id": 600078, "front": "白", "back": "white", "level": 0, "next": 0}, {"id": 600079, "front": "黒", "back": "black", "level": 0, "next": 0}, {"id": 600080, "front": "朝", "back": "morning", "level": 0, "next": 0}]}, {"id": "en-4", "title": "英検4級 · 初級", "desc": "中学レベルの日常語（表=日本語）", "color": ["#10b981", "#14b8a6"], "type": "word", "cards": [{"id": 600081, "front": "朝食", "back": "breakfast", "level": 0, "next": 0}, {"id": 600082, "front": "昼食", "back": "lunch", "level": 0, "next": 0}, {"id": 600083, "front": "夕食", "back": "dinner", "level": 0, "next": 0}, {"id": 600084, "front": "台所", "back": "kitchen", "level": 0, "next": 0}, {"id": 600085, "front": "庭", "back": "garden", "level": 0, "next": 0}, {"id": 600086, "front": "天気", "back": "weather", "level": 0, "next": 0}, {"id": 600087, "front": "季節", "back": "season", "level": 0, "next": 0}, {"id": 600088, "front": "春", "back": "spring", "level": 0, "next": 0}, {"id": 600089, "front": "夏", "back": "summer", "level": 0, "next": 0}, {"id": 600090, "front": "冬", "back": "winter", "level": 0, "next": 0}, {"id": 600091, "front": "休日", "back": "holiday", "level": 0, "next": 0}, {"id": 600092, "front": "休暇", "back": "vacation", "level": 0, "next": 0}, {"id": 600093, "front": "誕生日", "back": "birthday", "level": 0, "next": 0}, {"id": 600094, "front": "贈り物", "back": "present", "level": 0, "next": 0}, {"id": 600095, "front": "手紙", "back": "letter", "level": 0, "next": 0}, {"id": 600096, "front": "映画", "back": "movie", "level": 0, "next": 0}, {"id": 600097, "front": "音楽", "back": "music", "level": 0, "next": 0}, {"id": 600098, "front": "歌", "back": "song", "level": 0, "next": 0}, {"id": 600099, "front": "絵・写真", "back": "picture", "level": 0, "next": 0}, {"id": 600100, "front": "物語", "back": "story", "level": 0, "next": 0}, {"id": 600101, "front": "病院", "back": "hospital", "level": 0, "next": 0}, {"id": 600102, "front": "医者", "back": "doctor", "level": 0, "next": 0}, {"id": 600103, "front": "看護師", "back": "nurse", "level": 0, "next": 0}, {"id": 600104, "front": "警察", "back": "police", "level": 0, "next": 0}, {"id": 600105, "front": "会社・事務所", "back": "office", "level": 0, "next": 0}, {"id": 600106, "front": "図書館", "back": "library", "level": 0, "next": 0}, {"id": 600107, "front": "博物館", "back": "museum", "level": 0, "next": 0}, {"id": 600108, "front": "レストラン", "back": "restaurant", "level": 0, "next": 0}, {"id": 600109, "front": "空港", "back": "airport", "level": 0, "next": 0}, {"id": 600110, "front": "橋", "back": "bridge", "level": 0, "next": 0}, {"id": 600111, "front": "国・田舎", "back": "country", "level": 0, "next": 0}, {"id": 600112, "front": "世界", "back": "world", "level": 0, "next": 0}, {"id": 600113, "front": "山", "back": "mountain", "level": 0, "next": 0}, {"id": 600114, "front": "海", "back": "sea", "level": 0, "next": 0}, {"id": 600115, "front": "浜辺", "back": "beach", "level": 0, "next": 0}, {"id": 600116, "front": "お金", "back": "money", "level": 0, "next": 0}, {"id": 600117, "front": "値段", "back": "price", "level": 0, "next": 0}, {"id": 600118, "front": "切符", "back": "ticket", "level": 0, "next": 0}, {"id": 600119, "front": "地図", "back": "map", "level": 0, "next": 0}, {"id": 600120, "front": "時計", "back": "clock", "level": 0, "next": 0}, {"id": 600121, "front": "仕事", "back": "job", "level": 0, "next": 0}, {"id": 600122, "front": "夢", "back": "dream", "level": 0, "next": 0}, {"id": 600123, "front": "考え・アイデア", "back": "idea", "level": 0, "next": 0}, {"id": 600124, "front": "問題", "back": "problem", "level": 0, "next": 0}, {"id": 600125, "front": "答え", "back": "answer", "level": 0, "next": 0}, {"id": 600126, "front": "質問", "back": "question", "level": 0, "next": 0}, {"id": 600127, "front": "テスト", "back": "test", "level": 0, "next": 0}, {"id": 600128, "front": "単語・言葉", "back": "word", "level": 0, "next": 0}, {"id": 600129, "front": "言語", "back": "language", "level": 0, "next": 0}, {"id": 600130, "front": "歴史", "back": "history", "level": 0, "next": 0}, {"id": 600131, "front": "始める", "back": "start", "level": 0, "next": 0}, {"id": 600132, "front": "止まる・やめる", "back": "stop", "level": 0, "next": 0}, {"id": 600133, "front": "助ける", "back": "help", "level": 0, "next": 0}, {"id": 600134, "front": "電話する・呼ぶ", "back": "call", "level": 0, "next": 0}, {"id": 600135, "front": "使う", "back": "use", "level": 0, "next": 0}, {"id": 600136, "front": "買う", "back": "buy", "level": 0, "next": 0}, {"id": 600137, "front": "売る", "back": "sell", "level": 0, "next": 0}, {"id": 600138, "front": "送る", "back": "send", "level": 0, "next": 0}, {"id": 600139, "front": "持ってくる", "back": "bring", "level": 0, "next": 0}, {"id": 600140, "front": "運ぶ", "back": "carry", "level": 0, "next": 0}, {"id": 600141, "front": "学ぶ", "back": "learn", "level": 0, "next": 0}, {"id": 600142, "front": "教える", "back": "teach", "level": 0, "next": 0}, {"id": 600143, "front": "見せる", "back": "show", "level": 0, "next": 0}, {"id": 600144, "front": "伝える", "back": "tell", "level": 0, "next": 0}, {"id": 600145, "front": "たずねる", "back": "ask", "level": 0, "next": 0}, {"id": 600146, "front": "会う", "back": "meet", "level": 0, "next": 0}, {"id": 600147, "front": "訪れる", "back": "visit", "level": 0, "next": 0}, {"id": 600148, "front": "旅行する", "back": "travel", "level": 0, "next": 0}, {"id": 600149, "front": "待つ", "back": "wait", "level": 0, "next": 0}, {"id": 600150, "front": "試す", "back": "try", "level": 0, "next": 0}, {"id": 600151, "front": "忙しい", "back": "busy", "level": 0, "next": 0}, {"id": 600152, "front": "簡単な", "back": "easy", "level": 0, "next": 0}, {"id": 600153, "front": "難しい", "back": "difficult", "level": 0, "next": 0}, {"id": 600154, "front": "重要な", "back": "important", "level": 0, "next": 0}, {"id": 600155, "front": "有名な", "back": "famous", "level": 0, "next": 0}, {"id": 600156, "front": "親切な", "back": "kind", "level": 0, "next": 0}, {"id": 600157, "front": "美しい", "back": "beautiful", "level": 0, "next": 0}, {"id": 600158, "front": "おいしい", "back": "delicious", "level": 0, "next": 0}, {"id": 600159, "front": "お気に入りの", "back": "favorite", "level": 0, "next": 0}, {"id": 600160, "front": "準備ができた", "back": "ready", "level": 0, "next": 0}]}, {"id": "en-3", "title": "英検3級 · 中級", "desc": "中学卒業レベル（表=日本語）", "color": ["#0ea5e9", "#38bdf8"], "type": "word", "cards": [{"id": 600161, "front": "文化", "back": "culture", "level": 0, "next": 0}, {"id": 600162, "front": "自然", "back": "nature", "level": 0, "next": 0}, {"id": 600163, "front": "社会", "back": "society", "level": 0, "next": 0}, {"id": 600164, "front": "未来", "back": "future", "level": 0, "next": 0}, {"id": 600165, "front": "機会・見込み", "back": "chance", "level": 0, "next": 0}, {"id": 600166, "front": "理由", "back": "reason", "level": 0, "next": 0}, {"id": 600167, "front": "結果", "back": "result", "level": 0, "next": 0}, {"id": 600168, "front": "例", "back": "example", "level": 0, "next": 0}, {"id": 600169, "front": "科目・話題", "back": "subject", "level": 0, "next": 0}, {"id": 600170, "front": "一員・会員", "back": "member", "level": 0, "next": 0}, {"id": 600171, "front": "集団", "back": "group", "level": 0, "next": 0}, {"id": 600172, "front": "チーム", "back": "team", "level": 0, "next": 0}, {"id": 600173, "front": "会社", "back": "company", "level": 0, "next": 0}, {"id": 600174, "front": "客", "back": "customer", "level": 0, "next": 0}, {"id": 600175, "front": "サービス", "back": "service", "level": 0, "next": 0}, {"id": 600176, "front": "健康", "back": "health", "level": 0, "next": 0}, {"id": 600177, "front": "安全", "back": "safety", "level": 0, "next": 0}, {"id": 600178, "front": "危険", "back": "danger", "level": 0, "next": 0}, {"id": 600179, "front": "事故", "back": "accident", "level": 0, "next": 0}, {"id": 600180, "front": "面倒・困りごと", "back": "trouble", "level": 0, "next": 0}, {"id": 600181, "front": "情報", "back": "information", "level": 0, "next": 0}, {"id": 600182, "front": "知らせ・ニュース", "back": "news", "level": 0, "next": 0}, {"id": 600183, "front": "伝言", "back": "message", "level": 0, "next": 0}, {"id": 600184, "front": "報告", "back": "report", "level": 0, "next": 0}, {"id": 600185, "front": "計画", "back": "plan", "level": 0, "next": 0}, {"id": 600186, "front": "目標", "back": "goal", "level": 0, "next": 0}, {"id": 600187, "front": "努力", "back": "effort", "level": 0, "next": 0}, {"id": 600188, "front": "成功", "back": "success", "level": 0, "next": 0}, {"id": 600189, "front": "経験", "back": "experience", "level": 0, "next": 0}, {"id": 600190, "front": "知識", "back": "knowledge", "level": 0, "next": 0}, {"id": 600191, "front": "出来事・行事", "back": "event", "level": 0, "next": 0}, {"id": 600192, "front": "会議", "back": "meeting", "level": 0, "next": 0}, {"id": 600193, "front": "競技会・コンテスト", "back": "contest", "level": 0, "next": 0}, {"id": 600194, "front": "演技・成績", "back": "performance", "level": 0, "next": 0}, {"id": 600195, "front": "演説", "back": "speech", "level": 0, "next": 0}, {"id": 600196, "front": "決める", "back": "decide", "level": 0, "next": 0}, {"id": 600197, "front": "選ぶ", "back": "choose", "level": 0, "next": 0}, {"id": 600198, "front": "同意する", "back": "agree", "level": 0, "next": 0}, {"id": 600199, "front": "説明する", "back": "explain", "level": 0, "next": 0}, {"id": 600200, "front": "理解する", "back": "understand", "level": 0, "next": 0}, {"id": 600201, "front": "信じる", "back": "believe", "level": 0, "next": 0}, {"id": 600202, "front": "望む", "back": "hope", "level": 0, "next": 0}, {"id": 600203, "front": "心配する", "back": "worry", "level": 0, "next": 0}, {"id": 600204, "front": "楽しむ", "back": "enjoy", "level": 0, "next": 0}, {"id": 600205, "front": "続ける", "back": "continue", "level": 0, "next": 0}, {"id": 600206, "front": "終える", "back": "finish", "level": 0, "next": 0}, {"id": 600207, "front": "戻る・返す", "back": "return", "level": 0, "next": 0}, {"id": 600208, "front": "到着する", "back": "arrive", "level": 0, "next": 0}, {"id": 600209, "front": "起こる", "back": "happen", "level": 0, "next": 0}, {"id": 600210, "front": "変える・変わる", "back": "change", "level": 0, "next": 0}, {"id": 600211, "front": "改善する", "back": "improve", "level": 0, "next": 0}, {"id": 600212, "front": "増える・増やす", "back": "increase", "level": 0, "next": 0}, {"id": 600213, "front": "集める", "back": "collect", "level": 0, "next": 0}, {"id": 600214, "front": "分かち合う・共有する", "back": "share", "level": 0, "next": 0}, {"id": 600215, "front": "救う・節約する", "back": "save", "level": 0, "next": 0}, {"id": 600216, "front": "建てる", "back": "build", "level": 0, "next": 0}, {"id": 600217, "front": "作り出す", "back": "create", "level": 0, "next": 0}, {"id": 600218, "front": "発明する", "back": "invent", "level": 0, "next": 0}, {"id": 600219, "front": "設計する・デザインする", "back": "design", "level": 0, "next": 0}, {"id": 600220, "front": "準備する", "back": "prepare", "level": 0, "next": 0}, {"id": 600221, "front": "確認する", "back": "check", "level": 0, "next": 0}, {"id": 600222, "front": "ついていく・従う", "back": "follow", "level": 0, "next": 0}, {"id": 600223, "front": "参加する", "back": "join", "level": 0, "next": 0}, {"id": 600224, "front": "保つ・し続ける", "back": "keep", "level": 0, "next": 0}, {"id": 600225, "front": "注意深い", "back": "careful", "level": 0, "next": 0}, {"id": 600226, "front": "危険な", "back": "dangerous", "level": 0, "next": 0}, {"id": 600227, "front": "高価な", "back": "expensive", "level": 0, "next": 0}, {"id": 600228, "front": "安い", "back": "cheap", "level": 0, "next": 0}, {"id": 600229, "front": "役に立つ", "back": "useful", "level": 0, "next": 0}, {"id": 600230, "front": "人気のある", "back": "popular", "level": 0, "next": 0}, {"id": 600231, "front": "特別な", "back": "special", "level": 0, "next": 0}, {"id": 600232, "front": "似ている", "back": "similar", "level": 0, "next": 0}, {"id": 600233, "front": "異なる", "back": "different", "level": 0, "next": 0}, {"id": 600234, "front": "可能な", "back": "possible", "level": 0, "next": 0}, {"id": 600235, "front": "必要な", "back": "necessary", "level": 0, "next": 0}, {"id": 600236, "front": "快適な", "back": "comfortable", "level": 0, "next": 0}, {"id": 600237, "front": "単純な", "back": "simple", "level": 0, "next": 0}, {"id": 600238, "front": "賢い", "back": "clever", "level": 0, "next": 0}, {"id": 600239, "front": "礼儀正しい", "back": "polite", "level": 0, "next": 0}, {"id": 600240, "front": "突然", "back": "suddenly", "level": 0, "next": 0}, {"id": 600241, "front": "たいてい", "back": "usually", "level": 0, "next": 0}, {"id": 600242, "front": "ついに", "back": "finally", "level": 0, "next": 0}, {"id": 600243, "front": "たぶん", "back": "probably", "level": 0, "next": 0}, {"id": 600244, "front": "ほとんど", "back": "almost", "level": 0, "next": 0}]}, {"id": "en-p2", "title": "英検準2級 · 中上級", "desc": "高校中級レベル（表=日本語）", "color": ["#6366f1", "#818cf8"], "type": "word", "cards": [{"id": 600245, "front": "環境", "back": "environment", "level": 0, "next": 0}, {"id": 600246, "front": "資源", "back": "resource", "level": 0, "next": 0}, {"id": 600247, "front": "エネルギー", "back": "energy", "level": 0, "next": 0}, {"id": 600248, "front": "汚染", "back": "pollution", "level": 0, "next": 0}, {"id": 600249, "front": "気候", "back": "climate", "level": 0, "next": 0}, {"id": 600250, "front": "人口", "back": "population", "level": 0, "next": 0}, {"id": 600251, "front": "経済", "back": "economy", "level": 0, "next": 0}, {"id": 600252, "front": "産業", "back": "industry", "level": 0, "next": 0}, {"id": 600253, "front": "科学技術", "back": "technology", "level": 0, "next": 0}, {"id": 600254, "front": "科学", "back": "science", "level": 0, "next": 0}, {"id": 600255, "front": "研究", "back": "research", "level": 0, "next": 0}, {"id": 600256, "front": "教育", "back": "education", "level": 0, "next": 0}, {"id": 600257, "front": "政府", "back": "government", "level": 0, "next": 0}, {"id": 600258, "front": "地域社会", "back": "community", "level": 0, "next": 0}, {"id": 600259, "front": "関係", "back": "relationship", "level": 0, "next": 0}, {"id": 600260, "front": "意思疎通", "back": "communication", "level": 0, "next": 0}, {"id": 600261, "front": "意見", "back": "opinion", "level": 0, "next": 0}, {"id": 600262, "front": "影響", "back": "influence", "level": 0, "next": 0}, {"id": 600263, "front": "効果・影響", "back": "effect", "level": 0, "next": 0}, {"id": 600264, "front": "目的", "back": "purpose", "level": 0, "next": 0}, {"id": 600265, "front": "状況", "back": "situation", "level": 0, "next": 0}, {"id": 600266, "front": "状態・条件", "back": "condition", "level": 0, "next": 0}, {"id": 600267, "front": "質", "back": "quality", "level": 0, "next": 0}, {"id": 600268, "front": "量", "back": "amount", "level": 0, "next": 0}, {"id": 600269, "front": "平均", "back": "average", "level": 0, "next": 0}, {"id": 600270, "front": "パーセント", "back": "percent", "level": 0, "next": 0}, {"id": 600271, "front": "データ", "back": "data", "level": 0, "next": 0}, {"id": 600272, "front": "調査", "back": "survey", "level": 0, "next": 0}, {"id": 600273, "front": "方法", "back": "method", "level": 0, "next": 0}, {"id": 600274, "front": "制度・体系", "back": "system", "level": 0, "next": 0}, {"id": 600275, "front": "技能", "back": "skill", "level": 0, "next": 0}, {"id": 600276, "front": "能力", "back": "ability", "level": 0, "next": 0}, {"id": 600277, "front": "注意・関心", "back": "attention", "level": 0, "next": 0}, {"id": 600278, "front": "興味・利益", "back": "interest", "level": 0, "next": 0}, {"id": 600279, "front": "態度", "back": "attitude", "level": 0, "next": 0}, {"id": 600280, "front": "ふるまい", "back": "behavior", "level": 0, "next": 0}, {"id": 600281, "front": "習慣", "back": "habit", "level": 0, "next": 0}, {"id": 600282, "front": "慣習", "back": "custom", "level": 0, "next": 0}, {"id": 600283, "front": "伝統", "back": "tradition", "level": 0, "next": 0}, {"id": 600284, "front": "価値", "back": "value", "level": 0, "next": 0}, {"id": 600285, "front": "発達させる", "back": "develop", "level": 0, "next": 0}, {"id": 600286, "front": "生産する", "back": "produce", "level": 0, "next": 0}, {"id": 600287, "front": "提供する", "back": "provide", "level": 0, "next": 0}, {"id": 600288, "front": "申し出る・提供する", "back": "offer", "level": 0, "next": 0}, {"id": 600289, "front": "提案する", "back": "suggest", "level": 0, "next": 0}, {"id": 600290, "front": "必要とする", "back": "require", "level": 0, "next": 0}, {"id": 600291, "front": "許す", "back": "allow", "level": 0, "next": 0}, {"id": 600292, "front": "防ぐ", "back": "prevent", "level": 0, "next": 0}, {"id": 600293, "front": "減らす", "back": "reduce", "level": 0, "next": 0}, {"id": 600294, "front": "影響する", "back": "affect", "level": 0, "next": 0}, {"id": 600295, "front": "引き起こす", "back": "cause", "level": 0, "next": 0}, {"id": 600296, "front": "解決する", "back": "solve", "level": 0, "next": 0}, {"id": 600297, "front": "気づく・実現する", "back": "realize", "level": 0, "next": 0}, {"id": 600298, "front": "よく考える", "back": "consider", "level": 0, "next": 0}, {"id": 600299, "front": "比較する", "back": "compare", "level": 0, "next": 0}, {"id": 600300, "front": "描写する", "back": "describe", "level": 0, "next": 0}, {"id": 600301, "front": "表現する", "back": "express", "level": 0, "next": 0}, {"id": 600302, "front": "勧める", "back": "recommend", "level": 0, "next": 0}, {"id": 600303, "front": "受け入れる", "back": "accept", "level": 0, "next": 0}, {"id": 600304, "front": "断る", "back": "refuse", "level": 0, "next": 0}, {"id": 600305, "front": "支える", "back": "support", "level": 0, "next": 0}, {"id": 600306, "front": "守る", "back": "protect", "level": 0, "next": 0}, {"id": 600307, "front": "尊敬する", "back": "respect", "level": 0, "next": 0}, {"id": 600308, "front": "頼る", "back": "depend", "level": 0, "next": 0}, {"id": 600309, "front": "成功する", "back": "succeed", "level": 0, "next": 0}, {"id": 600310, "front": "最近の", "back": "recent", "level": 0, "next": 0}, {"id": 600311, "front": "現代の", "back": "modern", "level": 0, "next": 0}, {"id": 600312, "front": "共通の・ありふれた", "back": "common", "level": 0, "next": 0}, {"id": 600313, "front": "公共の", "back": "public", "level": 0, "next": 0}, {"id": 600314, "front": "私的な", "back": "private", "level": 0, "next": 0}, {"id": 600315, "front": "地元の", "back": "local", "level": 0, "next": 0}, {"id": 600316, "front": "国の", "back": "national", "level": 0, "next": 0}, {"id": 600317, "front": "地球規模の", "back": "global", "level": 0, "next": 0}, {"id": 600318, "front": "自然の", "back": "natural", "level": 0, "next": 0}, {"id": 600319, "front": "社会の", "back": "social", "level": 0, "next": 0}, {"id": 600320, "front": "深刻な・まじめな", "back": "serious", "level": 0, "next": 0}, {"id": 600321, "front": "効果的な", "back": "effective", "level": 0, "next": 0}, {"id": 600322, "front": "利用できる", "back": "available", "level": 0, "next": 0}, {"id": 600323, "front": "特定の", "back": "particular", "level": 0, "next": 0}, {"id": 600324, "front": "さまざまな", "back": "various", "level": 0, "next": 0}, {"id": 600325, "front": "明らかな", "back": "obvious", "level": 0, "next": 0}, {"id": 600326, "front": "緊張した", "back": "nervous", "level": 0, "next": 0}, {"id": 600327, "front": "自信のある", "back": "confident", "level": 0, "next": 0}, {"id": 600328, "front": "好奇心の強い", "back": "curious", "level": 0, "next": 0}, {"id": 600329, "front": "正直な", "back": "honest", "level": 0, "next": 0}]}, {"id": "en-2", "title": "英検2級 · 上級", "desc": "高校卒業・大学入試レベル（表=日本語）", "color": ["#9333ea", "#a855f7"], "type": "word", "cards": [{"id": 600330, "front": "利点", "back": "advantage", "level": 0, "next": 0}, {"id": 600331, "front": "欠点", "back": "disadvantage", "level": 0, "next": 0}, {"id": 600332, "front": "利益・恩恵", "back": "benefit", "level": 0, "next": 0}, {"id": 600333, "front": "利益", "back": "profit", "level": 0, "next": 0}, {"id": 600334, "front": "費用", "back": "cost", "level": 0, "next": 0}, {"id": 600335, "front": "予算", "back": "budget", "level": 0, "next": 0}, {"id": 600336, "front": "投資", "back": "investment", "level": 0, "next": 0}, {"id": 600337, "front": "需要・要求", "back": "demand", "level": 0, "next": 0}, {"id": 600338, "front": "供給", "back": "supply", "level": 0, "next": 0}, {"id": 600339, "front": "貿易・取引", "back": "trade", "level": 0, "next": 0}, {"id": 600340, "front": "方針・政策", "back": "policy", "level": 0, "next": 0}, {"id": 600341, "front": "戦略", "back": "strategy", "level": 0, "next": 0}, {"id": 600342, "front": "経営・管理", "back": "management", "level": 0, "next": 0}, {"id": 600343, "front": "組織", "back": "organization", "level": 0, "next": 0}, {"id": 600344, "front": "機関・制度", "back": "institution", "level": 0, "next": 0}, {"id": 600345, "front": "個人", "back": "individual", "level": 0, "next": 0}, {"id": 600346, "front": "市民", "back": "citizen", "level": 0, "next": 0}, {"id": 600347, "front": "権威・当局", "back": "authority", "level": 0, "next": 0}, {"id": 600348, "front": "責任", "back": "responsibility", "level": 0, "next": 0}, {"id": 600349, "front": "義務", "back": "duty", "level": 0, "next": 0}, {"id": 600350, "front": "権利", "back": "right", "level": 0, "next": 0}, {"id": 600351, "front": "自由", "back": "freedom", "level": 0, "next": 0}, {"id": 600352, "front": "正義", "back": "justice", "level": 0, "next": 0}, {"id": 600353, "front": "平等", "back": "equality", "level": 0, "next": 0}, {"id": 600354, "front": "民主主義", "back": "democracy", "level": 0, "next": 0}, {"id": 600355, "front": "犯罪", "back": "crime", "level": 0, "next": 0}, {"id": 600356, "front": "法律", "back": "law", "level": 0, "next": 0}, {"id": 600357, "front": "規則", "back": "rule", "level": 0, "next": 0}, {"id": 600358, "front": "基準", "back": "standard", "level": 0, "next": 0}, {"id": 600359, "front": "原則", "back": "principle", "level": 0, "next": 0}, {"id": 600360, "front": "理論", "back": "theory", "level": 0, "next": 0}, {"id": 600361, "front": "証拠", "back": "evidence", "level": 0, "next": 0}, {"id": 600362, "front": "事実", "back": "fact", "level": 0, "next": 0}, {"id": 600363, "front": "真実", "back": "truth", "level": 0, "next": 0}, {"id": 600364, "front": "要因", "back": "factor", "level": 0, "next": 0}, {"id": 600365, "front": "特徴", "back": "feature", "level": 0, "next": 0}, {"id": 600366, "front": "側面", "back": "aspect", "level": 0, "next": 0}, {"id": 600367, "front": "要素", "back": "element", "level": 0, "next": 0}, {"id": 600368, "front": "過程", "back": "process", "level": 0, "next": 0}, {"id": 600369, "front": "進歩", "back": "progress", "level": 0, "next": 0}, {"id": 600370, "front": "発展", "back": "development", "level": 0, "next": 0}, {"id": 600371, "front": "成長", "back": "growth", "level": 0, "next": 0}, {"id": 600372, "front": "衰退", "back": "decline", "level": 0, "next": 0}, {"id": 600373, "front": "達成する", "back": "achieve", "level": 0, "next": 0}, {"id": 600374, "front": "得る", "back": "acquire", "level": 0, "next": 0}, {"id": 600375, "front": "入手する", "back": "obtain", "level": 0, "next": 0}, {"id": 600376, "front": "得る", "back": "gain", "level": 0, "next": 0}, {"id": 600377, "front": "稼ぐ", "back": "earn", "level": 0, "next": 0}, {"id": 600378, "front": "維持する", "back": "maintain", "level": 0, "next": 0}, {"id": 600379, "front": "設立する", "back": "establish", "level": 0, "next": 0}, {"id": 600380, "front": "拡大する", "back": "expand", "level": 0, "next": 0}, {"id": 600381, "front": "取り除く", "back": "remove", "level": 0, "next": 0}, {"id": 600382, "front": "取り替える", "back": "replace", "level": 0, "next": 0}, {"id": 600383, "front": "含む・巻き込む", "back": "involve", "level": 0, "next": 0}, {"id": 600384, "front": "含む", "back": "include", "level": 0, "next": 0}, {"id": 600385, "front": "含む", "back": "contain", "level": 0, "next": 0}, {"id": 600386, "front": "示す", "back": "indicate", "level": 0, "next": 0}, {"id": 600387, "front": "証明する・示す", "back": "demonstrate", "level": 0, "next": 0}, {"id": 600388, "front": "決定する", "back": "determine", "level": 0, "next": 0}, {"id": 600389, "front": "見積もる", "back": "estimate", "level": 0, "next": 0}, {"id": 600390, "front": "予測する", "back": "predict", "level": 0, "next": 0}, {"id": 600391, "front": "仮定する", "back": "assume", "level": 0, "next": 0}, {"id": 600392, "front": "認識する", "back": "recognize", "level": 0, "next": 0}, {"id": 600393, "front": "特定する", "back": "identify", "level": 0, "next": 0}, {"id": 600394, "front": "分析する", "back": "analyze", "level": 0, "next": 0}, {"id": 600395, "front": "調べる", "back": "examine", "level": 0, "next": 0}, {"id": 600396, "front": "観察する", "back": "observe", "level": 0, "next": 0}, {"id": 600397, "front": "主張する", "back": "argue", "level": 0, "next": 0}, {"id": 600398, "front": "主張する", "back": "claim", "level": 0, "next": 0}, {"id": 600399, "front": "強く主張する", "back": "insist", "level": 0, "next": 0}, {"id": 600400, "front": "認める", "back": "admit", "level": 0, "next": 0}, {"id": 600401, "front": "否定する", "back": "deny", "level": 0, "next": 0}, {"id": 600402, "front": "励ます", "back": "encourage", "level": 0, "next": 0}, {"id": 600403, "front": "説得する", "back": "persuade", "level": 0, "next": 0}, {"id": 600404, "front": "強調する", "back": "emphasize", "level": 0, "next": 0}, {"id": 600405, "front": "集中する", "back": "focus", "level": 0, "next": 0}, {"id": 600406, "front": "応用する・応募する", "back": "apply", "level": 0, "next": 0}, {"id": 600407, "front": "複雑な", "back": "complex", "level": 0, "next": 0}, {"id": 600408, "front": "効率的な", "back": "efficient", "level": 0, "next": 0}, {"id": 600409, "front": "不可欠な", "back": "essential", "level": 0, "next": 0}, {"id": 600410, "front": "重要な", "back": "significant", "level": 0, "next": 0}, {"id": 600411, "front": "適切な", "back": "appropriate", "level": 0, "next": 0}, {"id": 600412, "front": "十分な", "back": "sufficient", "level": 0, "next": 0}, {"id": 600413, "front": "正確な", "back": "accurate", "level": 0, "next": 0}, {"id": 600414, "front": "信頼できる", "back": "reliable", "level": 0, "next": 0}, {"id": 600415, "front": "柔軟な", "back": "flexible", "level": 0, "next": 0}, {"id": 600416, "front": "財政の", "back": "financial", "level": 0, "next": 0}]}, {"id": "en-p1", "title": "英検準1級 · 難関", "desc": "大学中級・難関レベル（表=日本語）", "color": ["#e11d48", "#f43f5e"], "type": "word", "cards": [{"id": 600417, "front": "結果・影響", "back": "consequence", "level": 0, "next": 0}, {"id": 600418, "front": "現象", "back": "phenomenon", "level": 0, "next": 0}, {"id": 600419, "front": "状況", "back": "circumstance", "level": 0, "next": 0}, {"id": 600420, "front": "観点", "back": "perspective", "level": 0, "next": 0}, {"id": 600421, "front": "仮定", "back": "assumption", "level": 0, "next": 0}, {"id": 600422, "front": "仮説", "back": "hypothesis", "level": 0, "next": 0}, {"id": 600423, "front": "基準", "back": "criterion", "level": 0, "next": 0}, {"id": 600424, "front": "含意・影響", "back": "implication", "level": 0, "next": 0}, {"id": 600425, "front": "洞察", "back": "insight", "level": 0, "next": 0}, {"id": 600426, "front": "枠組み", "back": "framework", "level": 0, "next": 0}, {"id": 600427, "front": "社会基盤", "back": "infrastructure", "level": 0, "next": 0}, {"id": 600428, "front": "主導権・新構想", "back": "initiative", "level": 0, "next": 0}, {"id": 600429, "front": "動機付け・報奨", "back": "incentive", "level": 0, "next": 0}, {"id": 600430, "front": "仕組み", "back": "mechanism", "level": 0, "next": 0}, {"id": 600431, "front": "手順", "back": "procedure", "level": 0, "next": 0}, {"id": 600432, "front": "現象(複)", "back": "phenomena", "level": 0, "next": 0}, {"id": 600433, "front": "次元・側面", "back": "dimension", "level": 0, "next": 0}, {"id": 600434, "front": "構成要素", "back": "component", "level": 0, "next": 0}, {"id": 600435, "front": "割合", "back": "proportion", "level": 0, "next": 0}, {"id": 600436, "front": "大きさ・規模", "back": "magnitude", "level": 0, "next": 0}, {"id": 600437, "front": "偏り・先入観", "back": "bias", "level": 0, "next": 0}, {"id": 600438, "front": "偏見", "back": "prejudice", "level": 0, "next": 0}, {"id": 600439, "front": "差別", "back": "discrimination", "level": 0, "next": 0}, {"id": 600440, "front": "論争", "back": "controversy", "level": 0, "next": 0}, {"id": 600441, "front": "板挟み・難局", "back": "dilemma", "level": 0, "next": 0}, {"id": 600442, "front": "福祉", "back": "welfare", "level": 0, "next": 0}, {"id": 600443, "front": "貧困", "back": "poverty", "level": 0, "next": 0}, {"id": 600444, "front": "繁栄", "back": "prosperity", "level": 0, "next": 0}, {"id": 600445, "front": "持続可能性", "back": "sustainability", "level": 0, "next": 0}, {"id": 600446, "front": "多様性", "back": "diversity", "level": 0, "next": 0}, {"id": 600447, "front": "誠実さ・完全性", "back": "integrity", "level": 0, "next": 0}, {"id": 600448, "front": "自律・自治", "back": "autonomy", "level": 0, "next": 0}, {"id": 600449, "front": "総意", "back": "consensus", "level": 0, "next": 0}, {"id": 600450, "front": "妥協・和解", "back": "compromise", "level": 0, "next": 0}, {"id": 600451, "front": "交渉", "back": "negotiation", "level": 0, "next": 0}, {"id": 600452, "front": "高める", "back": "enhance", "level": 0, "next": 0}, {"id": 600453, "front": "促進する", "back": "facilitate", "level": 0, "next": 0}, {"id": 600454, "front": "実行する", "back": "implement", "level": 0, "next": 0}, {"id": 600455, "front": "統合する", "back": "integrate", "level": 0, "next": 0}, {"id": 600456, "front": "割り当てる", "back": "allocate", "level": 0, "next": 0}, {"id": 600457, "front": "蓄積する", "back": "accumulate", "level": 0, "next": 0}, {"id": 600458, "front": "埋め合わせる", "back": "compensate", "level": 0, "next": 0}, {"id": 600459, "front": "貢献する", "back": "contribute", "level": 0, "next": 0}, {"id": 600460, "front": "経験する", "back": "undergo", "level": 0, "next": 0}, {"id": 600461, "front": "引き受ける", "back": "undertake", "level": 0, "next": 0}, {"id": 600462, "front": "従う", "back": "comply", "level": 0, "next": 0}, {"id": 600463, "front": "適合する", "back": "conform", "level": 0, "next": 0}, {"id": 600464, "front": "対処する", "back": "cope", "level": 0, "next": 0}, {"id": 600465, "front": "引き出す・由来する", "back": "derive", "level": 0, "next": 0}, {"id": 600466, "front": "区別する", "back": "distinguish", "level": 0, "next": 0}, {"id": 600467, "front": "解釈する", "back": "interpret", "level": 0, "next": 0}, {"id": 600468, "front": "知覚する", "back": "perceive", "level": 0, "next": 0}, {"id": 600469, "front": "予期する", "back": "anticipate", "level": 0, "next": 0}, {"id": 600470, "front": "推測する", "back": "speculate", "level": 0, "next": 0}, {"id": 600471, "front": "正当化する", "back": "justify", "level": 0, "next": 0}, {"id": 600472, "front": "擁護する・主張する", "back": "advocate", "level": 0, "next": 0}, {"id": 600473, "front": "損なう", "back": "undermine", "level": 0, "next": 0}, {"id": 600474, "front": "妨げる", "back": "hinder", "level": 0, "next": 0}, {"id": 600475, "front": "課す", "back": "impose", "level": 0, "next": 0}, {"id": 600476, "front": "利用する・搾取する", "back": "exploit", "level": 0, "next": 0}, {"id": 600477, "front": "収容する・配慮する", "back": "accommodate", "level": 0, "next": 0}, {"id": 600478, "front": "(に)帰する", "back": "attribute", "level": 0, "next": 0}, {"id": 600479, "front": "構成する", "back": "constitute", "level": 0, "next": 0}, {"id": 600480, "front": "指定する", "back": "designate", "level": 0, "next": 0}, {"id": 600481, "front": "操作する", "back": "manipulate", "level": 0, "next": 0}, {"id": 600482, "front": "首尾一貫した", "back": "coherent", "level": 0, "next": 0}, {"id": 600483, "front": "包括的な", "back": "comprehensive", "level": 0, "next": 0}, {"id": 600484, "front": "避けられない", "back": "inevitable", "level": 0, "next": 0}, {"id": 600485, "front": "深遠な", "back": "profound", "level": 0, "next": 0}, {"id": 600486, "front": "微妙な", "back": "subtle", "level": 0, "next": 0}, {"id": 600487, "front": "あいまいな", "back": "ambiguous", "level": 0, "next": 0}, {"id": 600488, "front": "論争を呼ぶ", "back": "controversial", "level": 0, "next": 0}, {"id": 600489, "front": "傷つきやすい", "back": "vulnerable", "level": 0, "next": 0}, {"id": 600490, "front": "頑健な", "back": "robust", "level": 0, "next": 0}, {"id": 600491, "front": "著名な", "back": "prominent", "level": 0, "next": 0}, {"id": 600492, "front": "かなりの", "back": "substantial", "level": 0, "next": 0}, {"id": 600493, "front": "十分な", "back": "adequate", "level": 0, "next": 0}, {"id": 600494, "front": "実現可能な", "back": "feasible", "level": 0, "next": 0}, {"id": 600495, "front": "もっともらしい", "back": "plausible", "level": 0, "next": 0}, {"id": 600496, "front": "恣意的な", "back": "arbitrary", "level": 0, "next": 0}, {"id": 600497, "front": "明白な", "back": "explicit", "level": 0, "next": 0}, {"id": 600498, "front": "暗黙の", "back": "implicit", "level": 0, "next": 0}, {"id": 600499, "front": "厳密な", "back": "rigorous", "level": 0, "next": 0}, {"id": 600500, "front": "多用途の・多才な", "back": "versatile", "level": 0, "next": 0}, {"id": 600501, "front": "細心の", "back": "meticulous", "level": 0, "next": 0}]}];
+const KEY = 'vmp-en';
+const LANG = 'en-US';
+const DAY = 86400000;
+function speak(text){ try{ if(!('speechSynthesis' in window)) return; speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text); u.lang=LANG; u.rate=0.9; speechSynthesis.speak(u); }catch(e){} }
+let decks = load();
+let session = null;
+let editingDeckId = null;
+let editCard = null;
+const smartType = new Map();
+
+function load(){ try{ const s=localStorage.getItem(KEY); return s?JSON.parse(s):structuredClone(DEFAULT_DECKS); }catch(e){ return structuredClone(DEFAULT_DECKS); } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(decks)); }catch(e){} }
+const $ = s => document.querySelector(s);
+const now = () => Date.now();
+const isDue = c => !c.next || c.next <= now();
+function show(id){ ['home','game','add','settings','edit'].forEach(s=>$('#'+s).classList.toggle('hidden', s!==id)); }
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  let dueAll = 0;
+  decks.forEach(d => d.cards.forEach(c => { if(isDue(c)) dueAll++; }));
+  $('#dueTotal').textContent = dueAll;
+  $('#review').classList.toggle('empty', dueAll===0);
+
+  const list = $('#deckList'); list.innerHTML='';
+  decks.forEach(d => {
+    const due = d.cards.filter(isDue).length;
+    const grad = `linear-gradient(160deg,${d.color[0]},${d.color[1]})`;
+    const el = document.createElement('div'); el.className='deck';
+    el.innerHTML = `
+      <div class="bar" style="background:${grad}"></div>
+      <button class="edit" data-ed="${d.id}">✎</button>
+      <h3>${esc(d.title)}</h3>
+      <div class="d">${esc(d.desc||'')}</div>
+      <div class="row">
+        <span class="pill">${d.cards.length}語</span>
+        ${ due ? `<span class="pill due">⚠ ${due}</span>` : `<span class="pill" style="color:#10b981;background:#ecfdf5">✓ 完了</span>` }
+        <button class="play" data-play="${d.id}" style="background:${grad}">▶</button>
+      </div>`;
+    list.appendChild(el);
+  });
+  list.querySelectorAll('[data-play]').forEach(b=> b.onclick=()=>startDeck(b.dataset.play));
+  list.querySelectorAll('[data-ed]').forEach(b=> b.onclick=()=>openEdit(b.dataset.ed));
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
+/* ---------- START ---------- */
+function startDeck(id){ const d=decks.find(x=>x.id===id); if(!d||!d.cards.length) return; begin(d.cards.slice(), d, false); }
+function startSmart(){
+  let cards=[]; smartType.clear();
+  decks.forEach(d=> d.cards.forEach(c=>{ if(isDue(c)){ smartType.set(c,d.type); cards.push(c); }}));
+  if(!cards.length){ alert('復習する単語がまだ無いよ！'); return; }
+  cards.sort(()=>Math.random()-.5);
+  begin(cards, {title:'SMART REVIEW', color:['#f5443a','#ff7a3d'], type:'mix'}, true);
+}
+function begin(cards, deck, smart){
+  session={ cards, i:0, deck, smart, stats:{k:0,u:0}, dragX:0, dragging:false, startX:0, flipped:false };
+  show('game');
+  $('#gTag').textContent = smart ? '🔥 SMART REVIEW' : deck.title;
+  renderCard();
+}
+
+/* ---------- GAME ---------- */
+function renderCard(){
+  const s=session, stage=$('#stage');
+  $('#gProg').textContent = `${Math.min(s.i+1,s.cards.length)} / ${s.cards.length}`;
+  if(s.i>=s.cards.length){
+    $('#gActions').classList.add('hidden'); $('#tint').style.background='transparent';
+    stage.innerHTML = `<div class="done-card"><h2>Session Complete! 🎉</h2>
+      <div class="done-grid"><div class="box k"><b>${s.stats.k}</b><span>覚えた</span></div>
+      <div class="box u"><b>${s.stats.u}</b><span>復習</span></div></div>
+      <button class="primary" id="homeBtn">ホームに戻る</button></div>`;
+    $('#homeBtn').onclick=goHome; return;
+  }
+  $('#gActions').classList.remove('hidden');
+  const c=s.cards[s.i];
+  const type=s.smart ? (smartType.get(c)||'word') : s.deck.type;
+  const sent = type==='sentence';
+  const grad=`linear-gradient(160deg,${s.deck.color[0]},${s.deck.color[1]})`;
+  const lvl=c.level||0;
+  const dots=Array.from({length:5},(_,i)=>`<i class="${i<lvl?'on':''}"></i>`).join('');
+  const exBlock = c.ex ? `<div class="ex"><div class="exh">${esc(c.ex)} <button class="spk" data-say="${esc(c.ex)}">🔊</button></div>
+      ${c.exSub?`<div class="exp">${esc(c.exSub)}</div>`:''}
+      ${c.exEn?`<div class="exe">${esc(c.exEn)}</div>`:''}</div>` : '';
+  stage.innerHTML = `<div class="card" id="card">
+    <div class="face front">
+      <div class="stamp got">GOT IT</div><div class="stamp forgot">FORGOT</div>
+      <div class="word ${sent?'sm':''}">${esc(c.front)}</div>
+      <div class="lvl">${dots}</div><div class="flip-hint">TAP TO FLIP</div>
+    </div>
+    <div class="face back" style="background:${grad}">
+      <div class="main ${sent?'sm':''}">${esc(c.back)} <button class="spk" data-say="${esc(c.back)}">🔊</button></div>
+      ${c.sub?`<div class="pin">${esc(c.sub)}</div>`:''}
+      ${exBlock}
+    </div></div>`;
+  s.flipped=false; s.dragX=0; bindCard();
+}
+function gMove(e){ if(!session||!session.dragging) return; session.dragX=(px(e)-session.startX)*1.1; paint(); }
+function gUp(){ if(!session||!session.dragging) return; session.dragging=false;
+  if(session.dragX>100) swipe(true); else if(session.dragX<-100) swipe(false); else { session.dragX=0; paint(); } }
+window.addEventListener('mousemove',gMove); window.addEventListener('mouseup',gUp);
+function bindCard(){
+  const card=$('#card');
+  const down=e=>{ session.dragging=true; session.startX=px(e); };
+  card.addEventListener('mousedown',down);
+  card.addEventListener('touchstart',down,{passive:true});
+  card.addEventListener('touchmove',gMove,{passive:true});
+  card.addEventListener('touchend',gUp);
+  card.addEventListener('click',()=>{ if(Math.abs(session.dragX)<6){ session.flipped=!session.flipped; paint(); } });
+  document.querySelectorAll('#stage .spk').forEach(b=>{
+    const stop=e=>e.stopPropagation();
+    b.addEventListener('mousedown',stop); b.addEventListener('touchstart',stop,{passive:true});
+    b.addEventListener('click',e=>{ e.stopPropagation(); speak(b.dataset.say); });
+  });
+}
+function px(e){ return e.touches ? e.touches[0].clientX : e.clientX; }
+function paint(){
+  const card=$('#card'); if(!card) return; const x=session.dragX;
+  card.style.transition = session.dragging ? 'none' : 'transform .3s cubic-bezier(.2,.8,.2,1)';
+  card.style.transform = `translateX(${x}px) rotate(${x*.05}deg) rotateY(${session.flipped?180:0}deg)`;
+  card.querySelector('.stamp.got').style.opacity = x>50?1:0;
+  card.querySelector('.stamp.forgot').style.opacity = x<-50?1:0;
+  const t=$('#tint');
+  t.style.background = x>0?`rgba(16,185,129,${Math.min(x/300,.22)})` : x<0?`rgba(244,63,94,${Math.min(-x/300,.22)})`:'transparent';
+}
+function swipe(known){
+  const s=session, c=s.cards[s.i];
+  if(known){ c.level=Math.min((c.level||0)+1,5); c.next=now()+c.level*3*DAY; s.stats.k++; }
+  else{ c.level=0; c.next=now()+60000; s.stats.u++; }
+  save();
+  s.dragX = known?600:-600; paint();
+  setTimeout(()=>{ s.i++; $('#tint').style.background='transparent'; renderCard(); }, 200);
+}
+function goHome(){ session=null; show('home'); renderHome(); }
+
+/* ---------- ADD ---------- */
+function openAdd(preDeckId, card){
+  editCard=card||null;
+  fillDeckSelect($('#aDeck'), true);
+  if(preDeckId) $('#aDeck').value=preDeckId;
+  toggleNew();
+  $('#aNewTitle').value='';
+  $('#aFront').value=card?card.front:''; $('#aBack').value=card?card.back:'';
+  $('#aSub').value=(card&&card.sub)||''; $('#aEx').value=(card&&card.ex)||'';
+  $('#aExSub').value=(card&&card.exSub)||''; $('#aExEn').value=(card&&card.exEn)||'';
+  $('#aDeckWrap').style.display=card?'none':'';
+  $('#add .fhead h1').textContent=card?'カードを編集':'単語を追加';
+  $('#aSave').textContent=card?'保存する':'追加する';
+  show('add');
+}
+function toggleNew(){ $('#aNewWrap').style.display = $('#aDeck').value==='__new__' ? 'block':'none'; }
+function fillDeckSelect(sel, withNew){
+  sel.innerHTML = (withNew?'<option value="__new__">🆕 新しいデッキ</option>':'') +
+    decks.map(d=>`<option value="${d.id}">${esc(d.title)}</option>`).join('');
+}
+function saveAdd(){
+  const front=$('#aFront').value.trim(), back=$('#aBack').value.trim();
+  if(!front||!back){ alert('表と裏は必須だよ'); return; }
+  const sub=$('#aSub').value.trim(), ex=$('#aEx').value.trim(), exSub=$('#aExSub').value.trim(), exEn=$('#aExEn').value.trim();
+  if(editCard){
+    editCard.front=front; editCard.back=back;
+    const set=(k,v)=>{ if(v) editCard[k]=v; else delete editCard[k]; };
+    set('sub',sub); set('ex',ex); set('exSub',exSub); set('exEn',exEn);
+    save(); const did=editingDeckId; editCard=null; openEdit(did); return;
+  }
+  const card={ id:Date.now(), front, back, level:0, next:0 };
+  if(sub) card.sub=sub; if(ex) card.ex=ex; if(exSub) card.exSub=exSub; if(exEn) card.exEn=exEn;
+  let did=$('#aDeck').value;
+  if(did==='__new__'){
+    const t=$('#aNewTitle').value.trim()||'新しいデッキ';
+    decks.push({ id:'user-'+Date.now(), title:t, desc:'自分で追加', color:['#22c55e','#14b8a6'], type:'word', cards:[card] });
+  } else { decks.find(d=>d.id===did).cards.push(card); }
+  save(); goHome();
+}
+
+/* ---------- SETTINGS ---------- */
+function openSettings(){ fillDeckSelect($('#iDeck'), true); $('#iText').value=''; show('settings'); }
+function runImport(){
+  let arr; try{ arr=JSON.parse($('#iText').value); }catch(e){ alert('JSONの形式が不正だよ'); return; }
+  if(!Array.isArray(arr)){ alert('配列 [ ... ] で貼ってね'); return; }
+  const cards=arr.filter(x=>x&&x.front&&x.back).map((x,i)=>({ id:Date.now()+i, front:String(x.front), back:String(x.back),
+    ...(x.sub?{sub:String(x.sub)}:{}), ...(x.ex?{ex:String(x.ex)}:{}), ...(x.exSub?{exSub:String(x.exSub)}:{}),
+    ...(x.exEn?{exEn:String(x.exEn)}:{}), level:0, next:0 }));
+  if(!cards.length){ alert('front と back を持つ項目が無いよ'); return; }
+  let did=$('#iDeck').value;
+  if(did==='__new__'){ decks.push({ id:'user-'+Date.now(), title:'インポート', desc:'JSONから追加', color:['#22c55e','#14b8a6'], type:'word', cards }); }
+  else { decks.find(d=>d.id===did).cards.push(...cards); }
+  save(); alert(cards.length+'語を追加したよ！'); goHome();
+}
+function exportAll(){ navigator.clipboard.writeText(JSON.stringify(decks,null,2)).then(()=>alert('コピーしたよ')).catch(()=>alert('コピーできなかった。localhost経由で開くとコピーできるよ')); }
+function resetAll(){ if(confirm('進捗と自分で追加した分を全部消して初期状態に戻す？')){ decks=structuredClone(DEFAULT_DECKS); save(); goHome(); } }
+
+/* ---------- EDIT ---------- */
+function openEdit(id){
+  editingDeckId=id; const d=decks.find(x=>x.id===id); if(!d) return;
+  $('#edTitle').textContent=d.title;
+  const list=$('#edList'); list.innerHTML='';
+  d.cards.forEach(c=>{
+    const row=document.createElement('div'); row.className='erow';
+    row.innerHTML=`<div class="ef"><b>${esc(c.front)}</b><span>${esc(c.back)}</span></div><button class="del">削除</button>`;
+    row.querySelector('.ef').onclick=()=>openAdd(id,c);
+    row.querySelector('.del').onclick=()=>{ if(confirm('このカードを削除する？')){ d.cards=d.cards.filter(x=>x!==c); save(); openEdit(id); } };
+    list.appendChild(row);
+  });
+  if(!d.cards.length) list.innerHTML='<div class="hint">カードがありません。</div>';
+  show('edit');
+}
+
+/* ---------- WIRE ---------- */
+$('#startBtn').onclick=startSmart;
+$('#addBtn').onclick=()=>openAdd();
+$('#gearBtn').onclick=openSettings;
+$('#gBack').onclick=goHome;
+$('#yesBtn').onclick=()=>{ session.dragX=600; paint(); swipe(true); };
+$('#noBtn').onclick=()=>{ session.dragX=-600; paint(); swipe(false); };
+$('#flipBtn').onclick=()=>{ session.flipped=!session.flipped; paint(); };
+$('#addBack').onclick=()=>{ if(editCard){ const did=editingDeckId; editCard=null; openEdit(did); } else goHome(); };
+$('#aDeck').onchange=toggleNew; $('#aSave').onclick=saveAdd;
+$('#setBack').onclick=goHome; $('#iRun').onclick=runImport; $('#expBtn').onclick=exportAll; $('#resetBtn').onclick=resetAll;
+$('#edBack').onclick=goHome; $('#edAdd').onclick=()=>openAdd(editingDeckId);
+$('#adX').onclick=()=>$('#ad').style.display='none';
+
+// language switcher (4言語)
+const APPS=[
+  {code:'en',file:'VocabMatch.html',name:'Vocab Match',label:'英語',badge:'EN',grad:['#4f46e5','#3b82f6']},
+  {code:'zh',file:'ChineseMatch.html',name:'Chinese Match',label:'中国語',badge:'中',grad:['#ef4444','#f59e0b']},
+  {code:'ko',file:'KoreanMatch.html',name:'Korean Match',label:'韓国語',badge:'한',grad:['#0ea5e9','#6366f1']},
+  {code:'de',file:'GermanMatch.html',name:'German Match',label:'ドイツ語',badge:'DE',grad:['#111827','#f59e0b']},
+];
+const CUR=LANG.slice(0,2);
+const curApp=APPS.find(a=>a.code===CUR)||APPS[0];
+$('#langName').textContent=curApp.name;
+$('#langMenu').innerHTML=APPS.map(a=>`<a href="${a.file}" class="${a.code===CUR?'cur':''}"><span class="lb" style="background:linear-gradient(160deg,${a.grad[0]},${a.grad[1]})">${a.badge}</span><span>${a.label} · ${a.name}</span></a>`).join('');
+function toggleLang(open){
+  const show = (open===undefined) ? $('#langMenu').classList.contains('hidden') : open;
+  $('#langMenu').classList.toggle('hidden', !show);
+  $('#langBack').classList.toggle('hidden', !show);
+}
+$('#langBtn').onclick=()=>toggleLang();
+$('#langBack').onclick=()=>toggleLang(false);
+$('#langMenu').querySelector('a.cur').onclick=(e)=>{ e.preventDefault(); toggleLang(false); }; // 現在の言語は閉じるだけ
+
+renderHome();
+</script>
+</body>
+</html>

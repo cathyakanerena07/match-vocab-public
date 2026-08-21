@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Korean Match</title>
+<style>
+  *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{ --bg:#f3f4f6; --card:#ffffff; --ink:#1f2937; --muted:#9ca3af; --line:#eef2f7; --accent:#6366f1; }
+  html,body{ height:100%; }
+  body{ font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Segoe UI",Roboto,sans-serif;
+    background:#e5e7eb; color:var(--ink); display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  #app{ width:100%; max-width:430px; height:100vh; max-height:930px; background:var(--bg);
+    position:relative; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 30px 80px rgba(0,0,0,.25); }
+  @media(min-width:480px){ #app{ height:910px; border-radius:34px; } }
+  .screen{ position:absolute; inset:0; display:flex; flex-direction:column; background:var(--bg); }
+  .hidden{ display:none !important; }
+  .scroll{ flex:1; overflow-y:auto; }
+  .ic{ display:inline-flex; align-items:center; justify-content:center; }
+
+  /* header */
+  .top{ display:flex; align-items:center; justify-content:space-between; padding:52px 22px 14px; background:var(--bg); }
+  .top .title{ display:flex; align-items:center; gap:8px; font-size:22px; font-weight:900; letter-spacing:-.3px;
+    background:none; border:none; color:inherit; cursor:pointer; padding:6px 8px; border-radius:12px; }
+  .top .title:active{ background:#e9ebf0; }
+  .top .title .bk{ color:var(--accent); }
+  .top .title .chev{ font-size:13px; color:#a0a6b0; margin-left:-2px; }
+  .langback{ position:absolute; inset:0; z-index:40; }
+  .langmenu{ position:absolute; top:92px; left:50%; transform:translateX(-50%); z-index:50; width:270px;
+    background:#fff; border-radius:18px; box-shadow:0 14px 40px rgba(17,24,39,.2); padding:8px;
+    animation:menupop .16s ease; }
+  @keyframes menupop{ from{ opacity:0; transform:translate(-50%,-6px); } to{ opacity:1; transform:translate(-50%,0); } }
+  .langmenu a{ display:flex; align-items:center; gap:12px; padding:12px 12px; border-radius:13px;
+    text-decoration:none; color:#1f2937; font-weight:700; font-size:15px; }
+  .langmenu a:active{ background:#f1f5f9; }
+  .langmenu a.cur{ background:#eef0ff; }
+  .langmenu .lb{ width:34px; height:34px; border-radius:11px; flex-shrink:0; color:#fff; font-weight:800;
+    font-size:14px; display:flex; align-items:center; justify-content:center; }
+  .langmenu a.cur::after{ content:'✓'; margin-left:auto; color:var(--accent); font-weight:900; }
+  .rbtn{ width:46px; height:46px; border-radius:999px; border:none; cursor:pointer; background:#eef0f4; color:#6b7280;
+    font-size:20px; display:flex; align-items:center; justify-content:center; }
+  .rbtn.plus{ background:#e7e9ff; color:var(--accent); font-size:26px; font-weight:400; }
+  .rbtn:active{ transform:scale(.92); }
+
+  /* section labels */
+  .slabel{ display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#9199a4;
+    letter-spacing:1.5px; margin:18px 24px 12px; }
+  .slabel .e{ font-size:15px; }
+
+  /* today's review card */
+  .review{ margin:0 22px; border-radius:26px; padding:26px 24px; color:#fff; position:relative; overflow:hidden;
+    background:linear-gradient(120deg,#f5443a,#ff7a3d); box-shadow:0 16px 34px rgba(244,68,58,.32);
+    display:flex; justify-content:space-between; align-items:flex-start; }
+  .review h2{ font-size:27px; font-weight:900; }
+  .review p{ font-size:12.5px; opacity:.92; margin-top:4px; font-weight:600; }
+  .review .start{ margin-top:22px; display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.22);
+    border:none; color:#fff; font-weight:800; font-size:13px; padding:11px 18px; border-radius:999px; cursor:pointer; letter-spacing:.5px; }
+  .review .start:active{ background:rgba(255,255,255,.34); }
+  .review .num{ text-align:right; }
+  .review .num b{ font-size:52px; font-weight:900; line-height:1; display:block; }
+  .review .num span{ font-size:11px; font-weight:800; letter-spacing:2px; opacity:.9; }
+  .review.empty{ background:linear-gradient(120deg,#cbd5e1,#94a3b8); box-shadow:none; }
+
+  /* deck card */
+  .decks{ padding:0 22px 8px; }
+  .deck{ position:relative; background:var(--card); border-radius:22px; padding:20px 20px 18px 26px; margin-bottom:16px;
+    box-shadow:0 6px 18px rgba(17,24,39,.06); overflow:hidden; }
+  .deck .bar{ position:absolute; left:0; top:0; bottom:0; width:7px; }
+  .deck .edit{ position:absolute; top:8px; right:8px; color:#9aa2ad; cursor:pointer; font-size:20px; background:none; border:none; padding:10px; line-height:1; }
+  .deck .edit:active{ color:#6b7280; }
+  .deck h3{ font-size:21px; font-weight:800; }
+  .deck .d{ color:#7a828e; font-size:13px; margin-top:5px; font-weight:600; }
+  .deck .row{ display:flex; align-items:center; gap:10px; margin-top:16px; }
+  .pill{ background:#f1f3f7; color:#8a919c; font-weight:700; font-size:12.5px; padding:5px 12px; border-radius:999px; }
+  .pill.due{ background:#fdecec; color:#ef4444; display:inline-flex; align-items:center; gap:4px; }
+  .deck .play{ margin-left:auto; width:52px; height:52px; border-radius:999px; border:none; cursor:pointer; color:#fff;
+    font-size:19px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(99,102,241,.32); }
+  .deck .play:active{ transform:scale(.9); }
+
+  /* ad space */
+  .ad{ margin-top:auto; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:#e9ebef;
+    color:#aab0ba; font-size:12px; font-weight:800; letter-spacing:2px; position:relative; }
+  .ad .x{ position:absolute; right:14px; color:#b8bec8; cursor:pointer; border:none; background:none; font-size:16px; }
+
+  /* ---------- GAME ---------- */
+  .g-head{ padding:52px 20px 8px; display:flex; align-items:center; justify-content:space-between; z-index:20; }
+  .icon-btn{ width:44px; height:44px; border-radius:999px; border:none; background:#fff; cursor:pointer; font-size:20px;
+    color:#475569; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .g-tag{ text-align:right; }
+  .g-tag .p{ font-size:11px; font-weight:900; letter-spacing:1px; padding:4px 10px; border-radius:8px; background:#eef0ff; color:var(--accent); }
+  .g-tag .prog{ display:block; font-size:12px; color:var(--muted); font-weight:800; margin-top:4px; }
+  .tint{ position:absolute; inset:0; pointer-events:none; transition:background .1s; z-index:1; }
+  .stage{ flex:1; display:flex; align-items:center; justify-content:center; position:relative; padding:0 16px 16px; perspective:1400px; z-index:10; }
+  .card{ position:absolute; width:100%; max-width:340px; aspect-ratio:0.72; cursor:grab; transform-style:preserve-3d; user-select:none; }
+  .card:active{ cursor:grabbing; }
+  .face{ position:absolute; inset:0; border-radius:28px; backface-visibility:hidden; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:26px; text-align:center; box-shadow:0 20px 50px rgba(15,23,42,.18); }
+  .face.front{ background:#fff; border:1px solid #f1f5f9; }
+  .face.back{ color:#fff; transform:rotateY(180deg); text-shadow:0 1px 3px rgba(0,0,0,.28); }
+  .front .word{ font-size:38px; font-weight:800; line-height:1.25; color:#1f2937; }
+  .front .word.sm{ font-size:23px; font-weight:700; line-height:1.45; padding:0 4px; }
+  .back .main{ font-size:60px; font-weight:800; line-height:1.1; }
+  .back .main.sm{ font-size:29px; font-weight:700; line-height:1.4; }
+  .back .pin{ margin-top:14px; font-size:22px; font-weight:600; opacity:.96; }
+  .spk{ border:none; background:rgba(255,255,255,.3); color:#fff; border-radius:999px; cursor:pointer;
+    min-width:40px; min-height:40px; padding:9px; font-size:17px; line-height:1; vertical-align:middle; margin-left:8px; box-sizing:border-box; }
+  .spk:active{ background:rgba(255,255,255,.5); }
+  .back .exh .spk{ min-width:36px; min-height:36px; font-size:14px; padding:8px; margin-left:6px; }
+  .back .ex{ margin-top:20px; width:100%; background:rgba(0,0,0,.1); border-radius:16px; padding:15px 16px; }
+  .back .ex .exh{ font-size:17px; font-weight:600; line-height:1.45; }
+  .back .ex .exp{ font-size:13.5px; opacity:.95; margin-top:6px; }
+  .back .ex .exe{ font-size:13px; opacity:1; margin-top:8px; }
+  .lvl{ position:absolute; bottom:52px; display:flex; gap:6px; }
+  .lvl i{ width:8px; height:8px; border-radius:999px; background:#e2e8f0; }
+  .lvl i.on{ background:#34d399; }
+  .flip-hint{ position:absolute; bottom:24px; font-size:11px; letter-spacing:2px; color:#cbd5e1; font-weight:800; animation:pul 1.6s infinite; }
+  @keyframes pul{ 0%,100%{opacity:.4} 50%{opacity:1} }
+  .stamp{ position:absolute; top:26px; font-size:24px; font-weight:900; padding:6px 13px; border:4px solid; border-radius:12px; opacity:0; transition:opacity .1s; }
+  .stamp.got{ left:26px; color:#10b981; border-color:#10b981; transform:rotate(-14deg); }
+  .stamp.forgot{ right:26px; color:#f43f5e; border-color:#f43f5e; transform:rotate(14deg); }
+  .g-actions{ display:flex; align-items:flex-start; justify-content:center; gap:26px; padding-bottom:34px; z-index:20; }
+  .fabwrap{ display:flex; flex-direction:column; align-items:center; gap:7px; }
+  .fabwrap span{ font-size:11px; font-weight:700; color:#9ca3af; }
+  .fab{ border:none; border-radius:999px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 20px rgba(0,0,0,.12); transition:transform .12s; }
+  .fab:active{ transform:scale(.9); }
+  .fab.big{ width:64px; height:64px; font-size:28px; } .fab.mid{ width:50px; height:50px; font-size:20px; }
+  .fab.no{ color:#f43f5e; } .fab.yes{ color:#10b981; } .fab.flip{ color:var(--accent); }
+  .done-card{ width:88%; max-width:330px; background:#fff; border-radius:28px; padding:34px 26px; text-align:center; box-shadow:0 20px 50px rgba(15,23,42,.15); animation:pop .4s cubic-bezier(.175,.885,.32,1.275); }
+  @keyframes pop{ from{ transform:scale(.9); opacity:0 } to{ transform:scale(1); opacity:1 } }
+  .done-card h2{ font-size:23px; font-weight:900; margin-bottom:20px; }
+  .done-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:26px; }
+  .done-grid .box{ border-radius:16px; padding:18px; } .done-grid .box b{ display:block; font-size:30px; font-weight:900; } .done-grid .box span{ font-size:11px; font-weight:800; }
+  .box.k{ background:#ecfdf5; color:#10b981; } .box.u{ background:#fff1f2; color:#f43f5e; }
+  .primary{ width:100%; padding:16px; border:none; border-radius:16px; background:#1f2937; color:#fff; font-weight:900; font-size:15px; cursor:pointer; }
+  .primary:active{ opacity:.85; }
+
+  /* ---------- FORM (add/settings/edit) ---------- */
+  .fhead{ display:flex; align-items:center; gap:14px; padding:52px 20px 14px; background:#fff; border-bottom:1px solid var(--line); }
+  .fhead h1{ font-size:19px; font-weight:900; }
+  .fhead .bk{ border:none; background:none; font-size:22px; cursor:pointer; color:#475569; }
+  .fbody{ padding:22px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-size:12px; font-weight:800; color:#7a828e; margin-bottom:6px; }
+  .field input, .field select, .field textarea{ width:100%; padding:13px 14px; border:1px solid #e5e7eb; border-radius:13px;
+    font-size:15px; background:#fff; outline:none; font-family:inherit; }
+  .field input:focus, .field textarea:focus, .field select:focus{ border-color:var(--accent); }
+  .field textarea{ resize:none; min-height:88px; }
+  .fbtn{ width:100%; padding:15px; border:none; border-radius:14px; background:var(--accent); color:#fff; font-weight:900; font-size:15px; cursor:pointer; margin-top:4px; }
+  .fbtn:active{ opacity:.9; }
+  .fbtn.ghost{ background:#fff; color:#64748b; border:1px solid #e5e7eb; }
+  .fbtn.danger{ background:#fff1f2; color:#f43f5e; }
+  .hint{ font-size:11.5px; color:#a0a6b0; margin-top:-8px; margin-bottom:14px; }
+  .erow{ display:flex; align-items:center; gap:12px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px; }
+  .erow .ef{ flex:1; min-width:0; cursor:pointer; } .erow .ef b{ font-size:15px; } .erow .ef span{ display:block; color:var(--muted); font-size:13px; }
+  .erow .del{ border:none; background:#fff1f2; color:#f43f5e; border-radius:10px; padding:8px 11px; font-size:14px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- HOME -->
+  <section id="home" class="screen">
+    <div class="top">
+      <button class="rbtn" id="gearBtn">⚙</button>
+      <button class="title" id="langBtn"><span class="bk">📖</span> <span id="langName">Match</span> <span class="chev">▾</span></button>
+      <button class="rbtn plus" id="addBtn">＋</button>
+    </div>
+    <div class="langback hidden" id="langBack"></div>
+    <div class="langmenu hidden" id="langMenu"></div>
+    <div class="scroll">
+      <div class="slabel"><span class="e">⚡</span> TODAY'S REVIEW</div>
+      <div class="review" id="review">
+        <div>
+          <h2>復習モード</h2>
+          <p>忘却曲線に基づいて出題</p>
+          <button class="start" id="startBtn">▶ START SESSION</button>
+        </div>
+        <div class="num"><b id="dueTotal">0</b><span>CARDS</span></div>
+      </div>
+      <div class="slabel"><span class="e">🕐</span> YOUR DECKS</div>
+      <div class="decks" id="deckList"></div>
+    </div>
+    <div class="ad" id="ad">AD SPACE <button class="x" id="adX">✕</button></div>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="screen hidden">
+    <div class="tint" id="tint"></div>
+    <div class="g-head">
+      <button class="icon-btn" id="gBack">←</button>
+      <div class="g-tag"><span class="p" id="gTag">DECK</span><span class="prog" id="gProg">0 / 0</span></div>
+    </div>
+    <div class="stage" id="stage"></div>
+    <div class="g-actions" id="gActions">
+      <div class="fabwrap"><button class="fab big no" id="noBtn">✕</button><span>まだ</span></div>
+      <div class="fabwrap"><button class="fab mid flip" id="flipBtn">↺</button><span>めくる</span></div>
+      <div class="fabwrap"><button class="fab big yes" id="yesBtn">♥</button><span>覚えた</span></div>
+    </div>
+  </section>
+
+  <!-- ADD -->
+  <section id="add" class="screen hidden">
+    <div class="fhead"><button class="bk" id="addBack">←</button><h1>単語を追加</h1></div>
+    <div class="scroll"><div class="fbody">
+      <div class="field" id="aDeckWrap"><label>追加先デッキ</label>
+        <select id="aDeck"></select></div>
+      <div class="field" id="aNewWrap" style="display:none"><label>新規デッキ名</label>
+        <input id="aNewTitle" placeholder="例：旅行フレーズ"></div>
+      <div class="field"><label>表（問題面）</label><input id="aFront" placeholder="例：economy / 経済"></div>
+      <div class="field"><label>裏（答え面）</label><input id="aBack" placeholder="例：economy / 经济"></div>
+      <div class="field"><label>ピンイン / 発音（任意）</label><input id="aSub" placeholder="例：jīng jì"></div>
+      <div class="field"><label>例文（任意）</label><input id="aEx" placeholder="例文（裏面に表示）"></div>
+      <div class="field"><label>例文のピンイン / 発音（任意）</label><input id="aExSub" placeholder="例文の読み"></div>
+      <div class="field"><label>例文の訳（任意）</label><input id="aExEn" placeholder="例文の意味"></div>
+      <button class="fbtn" id="aSave">追加する</button>
+    </div></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings" class="screen hidden">
+    <div class="fhead"><button class="bk" id="setBack">←</button><h1>設定</h1></div>
+    <div class="scroll"><div class="fbody">
+      <div class="field"><label>JSONインポート先</label><select id="iDeck"></select></div>
+      <div class="field"><label>単語データ（JSON配列）</label>
+        <textarea id="iText" placeholder='[{"front":"経済","back":"economy","ex":"...","exEn":"..."}]'></textarea></div>
+      <div class="hint">front / back は必須。sub(ピンイン)・ex(例文)・exEn(訳) は任意。</div>
+      <button class="fbtn" id="iRun">インポート実行</button>
+      <div style="height:22px"></div>
+      <button class="fbtn ghost" id="expBtn">全データをコピー（バックアップ）</button>
+      <div style="height:10px"></div>
+      <button class="fbtn danger" id="resetBtn">進捗と追加分をリセット</button>
+    </div></div>
+  </section>
+
+  <!-- EDIT -->
+  <section id="edit" class="screen hidden">
+    <div class="fhead"><button class="bk" id="edBack">←</button><h1 id="edTitle">編集</h1></div>
+    <div class="scroll"><div class="fbody">
+      <button class="fbtn" id="edAdd" style="margin-bottom:16px">＋ このデッキに追加</button>
+      <div id="edList"></div>
+    </div></div>
+  </section>
+</div>
+
+<script>
+const DEFAULT_DECKS = [{"id": "ko-lv1", "title": "Level 1 · 기초", "desc": "あいさつ・基本動詞（表=日本語）", "color": ["#0ea5e9", "#6366f1"], "type": "word", "cards": [{"id": 910000, "front": "こんにちは", "back": "안녕하세요", "sub": "annyeonghaseyo", "ex": "안녕하세요, 만나서 반갑습니다.", "exSub": "annyeonghaseyo, mannaseo bangapseumnida.", "exEn": "こんにちは、はじめまして。", "level": 0, "next": 0}, {"id": 910001, "front": "ありがとう", "back": "감사합니다", "sub": "gamsahamnida", "ex": "도와주셔서 감사합니다.", "exSub": "dowajusyeoseo gamsahamnida.", "exEn": "手伝ってくれてありがとう。", "level": 0, "next": 0}, {"id": 910002, "front": "ごめんなさい", "back": "미안합니다", "sub": "mianhamnida", "ex": "늦어서 미안합니다.", "exSub": "neujeoseo mianhamnida.", "exEn": "遅れてごめんなさい。", "level": 0, "next": 0}, {"id": 910003, "front": "はい", "back": "네", "sub": "ne", "ex": "네, 맞아요.", "exSub": "ne, majayo.", "exEn": "はい、その通りです。", "level": 0, "next": 0}, {"id": 910004, "front": "いいえ", "back": "아니요", "sub": "aniyo", "ex": "아니요, 괜찮아요.", "exSub": "aniyo, gwaenchanayo.", "exEn": "いや、大丈夫。", "level": 0, "next": 0}, {"id": 910005, "front": "さようなら", "back": "안녕히 가세요", "sub": "annyeonghi gaseyo", "ex": "안녕히 가세요, 또 만나요.", "exSub": "annyeonghi gaseyo, tto mannayo.", "exEn": "さようなら、また会おう。", "level": 0, "next": 0}, {"id": 910006, "front": "私", "back": "저", "sub": "jeo", "ex": "저는 학생이에요.", "exSub": "jeoneun haksaengieyo.", "exEn": "私は学生だ。", "level": 0, "next": 0}, {"id": 910007, "front": "あなた", "back": "당신", "sub": "dangsin", "ex": "당신의 이름은 뭐예요?", "exSub": "dangsinui ireumeun mwoyeyo?", "exEn": "お名前は？", "level": 0, "next": 0}, {"id": 910008, "front": "私たち", "back": "우리", "sub": "uri", "ex": "우리 같이 가요.", "exSub": "uri gati gayo.", "exEn": "一緒に行こう。", "level": 0, "next": 0}, {"id": 910009, "front": "これ", "back": "이것", "sub": "igeot", "ex": "이것은 제 책이에요.", "exSub": "igeoseun je chaegieyo.", "exEn": "これは私の本だ。", "level": 0, "next": 0}, {"id": 910010, "front": "水", "back": "물", "sub": "mul", "ex": "물 좀 주세요.", "exSub": "mul jom juseyo.", "exEn": "水をください。", "level": 0, "next": 0}, {"id": 910011, "front": "食べ物", "back": "음식", "sub": "eumsik", "ex": "한국 음식을 좋아해요.", "exSub": "hanguk eumsigeul joahaeyo.", "exEn": "韓国料理が好きだ。", "level": 0, "next": 0}, {"id": 910012, "front": "ごはん・食事", "back": "밥", "sub": "bap", "ex": "우리 같이 밥 먹어요.", "exSub": "uri gati bap meogeoyo.", "exEn": "一緒に食べよう。", "level": 0, "next": 0}, {"id": 910013, "front": "コーヒー", "back": "커피", "sub": "keopi", "ex": "커피 한 잔 주세요.", "exSub": "keopi han jan juseyo.", "exEn": "コーヒーを一杯ください。", "level": 0, "next": 0}, {"id": 910014, "front": "友達", "back": "친구", "sub": "chingu", "ex": "그는 제 친구예요.", "exSub": "geuneun je chinguyeyo.", "exEn": "彼は私の友達だ。", "level": 0, "next": 0}, {"id": 910015, "front": "先生", "back": "선생님", "sub": "seonsaengnim", "ex": "선생님, 질문이 있어요.", "exSub": "seonsaengnim, jilmuni isseoyo.", "exEn": "先生、質問があります。", "level": 0, "next": 0}, {"id": 910016, "front": "学生", "back": "학생", "sub": "haksaeng", "ex": "저는 대학생이에요.", "exSub": "jeoneun daehaksaengieyo.", "exEn": "私は大学生だ。", "level": 0, "next": 0}, {"id": 910017, "front": "学校", "back": "학교", "sub": "hakgyo", "ex": "학교에 가요.", "exSub": "hakgyoe gayo.", "exEn": "学校に行くところだ。", "level": 0, "next": 0}, {"id": 910018, "front": "家", "back": "집", "sub": "jip", "ex": "우리 집에 오세요.", "exSub": "uri jibe oseyo.", "exEn": "うちに来てください。", "level": 0, "next": 0}, {"id": 910019, "front": "名前", "back": "이름", "sub": "ireum", "ex": "이름이 뭐예요?", "exSub": "ireumi mwoyeyo?", "exEn": "名前は何ていうの？", "level": 0, "next": 0}, {"id": 910020, "front": "食べる", "back": "먹다", "sub": "meokda", "ex": "뭐 먹고 싶어요?", "exSub": "mwo meokgo sipeoyo?", "exEn": "何が食べたい？", "level": 0, "next": 0}, {"id": 910021, "front": "飲む", "back": "마시다", "sub": "masida", "ex": "물을 마셔요.", "exSub": "mureul masyeoyo.", "exEn": "水を飲む。", "level": 0, "next": 0}, {"id": 910022, "front": "行く", "back": "가다", "sub": "gada", "ex": "지금 집에 가요.", "exSub": "jigeum jibe gayo.", "exEn": "今から帰る。", "level": 0, "next": 0}, {"id": 910023, "front": "来る", "back": "오다", "sub": "oda", "ex": "여기로 오세요.", "exSub": "yeogiro oseyo.", "exEn": "こちらへ来てください。", "level": 0, "next": 0}, {"id": 910024, "front": "見る", "back": "보다", "sub": "boda", "ex": "영화를 봐요.", "exSub": "yeonghwareul bwayo.", "exEn": "映画を見る。", "level": 0, "next": 0}, {"id": 910025, "front": "聞く", "back": "듣다", "sub": "deutda", "ex": "음악을 들어요.", "exSub": "eumageul deureoyo.", "exEn": "音楽を聴く。", "level": 0, "next": 0}, {"id": 910026, "front": "話す", "back": "말하다", "sub": "malhada", "ex": "천천히 말해 주세요.", "exSub": "cheoncheonhi malhae juseyo.", "exEn": "ゆっくり話してください。", "level": 0, "next": 0}, {"id": 910027, "front": "読む", "back": "읽다", "sub": "ikda", "ex": "책을 읽어요.", "exSub": "chaegeul ilgeoyo.", "exEn": "本を読む。", "level": 0, "next": 0}, {"id": 910028, "front": "書く", "back": "쓰다", "sub": "sseuda", "ex": "이름을 써 주세요.", "exSub": "ireumeul sseo juseyo.", "exEn": "名前を書いてください。", "level": 0, "next": 0}, {"id": 910029, "front": "勉強する", "back": "공부하다", "sub": "gongbuhada", "ex": "한국어를 공부해요.", "exSub": "hangugeoreul gongbuhaeyo.", "exEn": "韓国語を勉強している。", "level": 0, "next": 0}, {"id": 910030, "front": "働く", "back": "일하다", "sub": "ilhada", "ex": "서울에서 일해요.", "exSub": "seoureseo ilhaeyo.", "exEn": "ソウルで働いている。", "level": 0, "next": 0}, {"id": 910031, "front": "好む", "back": "좋아하다", "sub": "joahada", "ex": "커피를 좋아해요.", "exSub": "keopireul joahaeyo.", "exEn": "コーヒーが好きだ。", "level": 0, "next": 0}, {"id": 910032, "front": "愛する", "back": "사랑하다", "sub": "saranghada", "ex": "가족을 사랑해요.", "exSub": "gajogeul saranghaeyo.", "exEn": "家族を愛している。", "level": 0, "next": 0}, {"id": 910033, "front": "知っている", "back": "알다", "sub": "alda", "ex": "그 사람을 알아요.", "exSub": "geu sarameul arayo.", "exEn": "あの人を知っている。", "level": 0, "next": 0}, {"id": 910034, "front": "与える", "back": "주다", "sub": "juda", "ex": "이거 저한테 주세요.", "exSub": "igeo jeohante juseyo.", "exEn": "これをください。", "level": 0, "next": 0}, {"id": 910035, "front": "大きい", "back": "크다", "sub": "keuda", "ex": "이 방은 커요.", "exSub": "i bangeun keoyo.", "exEn": "この部屋は広い。", "level": 0, "next": 0}, {"id": 910036, "front": "小さい", "back": "작다", "sub": "jakda", "ex": "작은 가방이 있어요.", "exSub": "jageun gabangi isseoyo.", "exEn": "小さいかばんを持っている。", "level": 0, "next": 0}, {"id": 910037, "front": "よい", "back": "좋다", "sub": "jota", "ex": "오늘 날씨가 좋아요.", "exSub": "oneul nalssiga joayo.", "exEn": "今日はいい天気だ。", "level": 0, "next": 0}, {"id": 910038, "front": "たくさんの", "back": "많다", "sub": "manta", "ex": "사람이 많아요.", "exSub": "sarami manayo.", "exEn": "人がたくさんいる。", "level": 0, "next": 0}, {"id": 910039, "front": "おいしい", "back": "맛있다", "sub": "masitda", "ex": "이거 정말 맛있어요.", "exSub": "igeo jeongmal masisseoyo.", "exEn": "これは本当においしい。", "level": 0, "next": 0}, {"id": 910040, "front": "時間", "back": "시간", "sub": "sigan", "ex": "시간이 없어요.", "exSub": "sigani eopseoyo.", "exEn": "時間がない。", "level": 0, "next": 0}, {"id": 910041, "front": "今日", "back": "오늘", "sub": "oneul", "ex": "오늘은 월요일이에요.", "exSub": "oneureun woryoirieyo.", "exEn": "今日は月曜日だ。", "level": 0, "next": 0}, {"id": 910042, "front": "明日", "back": "내일", "sub": "naeil", "ex": "내일 만나요.", "exSub": "naeil mannayo.", "exEn": "また明日。", "level": 0, "next": 0}, {"id": 910043, "front": "今", "back": "지금", "sub": "jigeum", "ex": "지금 몇 시예요?", "exSub": "jigeum myeot siyeyo?", "exEn": "今何時？", "level": 0, "next": 0}, {"id": 910044, "front": "お金", "back": "돈", "sub": "don", "ex": "돈이 없어요.", "exSub": "doni eopseoyo.", "exEn": "お金がない。", "level": 0, "next": 0}, {"id": 910045, "front": "本", "back": "책", "sub": "chaek", "ex": "이 책 재미있어요.", "exSub": "i chaek jaemiisseoyo.", "exEn": "この本はおもしろい。", "level": 0, "next": 0}, {"id": 910046, "front": "人", "back": "사람", "sub": "saram", "ex": "그는 좋은 사람이에요.", "exSub": "geuneun joeun saramieyo.", "exEn": "彼はいい人だ。", "level": 0, "next": 0}, {"id": 910047, "front": "日・一日", "back": "날", "sub": "nal", "ex": "좋은 하루 되세요.", "exSub": "joeun haru doeseyo.", "exEn": "よい一日を。", "level": 0, "next": 0}, {"id": 910048, "front": "どこ", "back": "어디", "sub": "eodi", "ex": "화장실이 어디예요?", "exSub": "hwajangsiri eodiyeyo?", "exEn": "トイレはどこですか？", "level": 0, "next": 0}, {"id": 910049, "front": "いくら", "back": "얼마", "sub": "eolma", "ex": "이거 얼마예요?", "exSub": "igeo eolmayeyo?", "exEn": "これはいくら？", "level": 0, "next": 0}]}, {"id": "ko-lv2", "title": "Level 2 · 활용", "desc": "よく使う語（表=日本語）", "color": ["#3b82f6", "#22d3ee"], "type": "word", "cards": [{"id": 912000, "front": "母", "back": "어머니", "sub": "eomeoni", "ex": "우리 어머니는 선생님이에요.", "exSub": "uri eomeonineun seonsaengnimieyo.", "exEn": "母は先生だ。", "level": 0, "next": 0}, {"id": 912001, "front": "父", "back": "아버지", "sub": "abeoji", "ex": "아버지는 회사에 다녀요.", "exSub": "abeojineun hoesae danyeoyo.", "exEn": "父は会社に勤めている。", "level": 0, "next": 0}, {"id": 912002, "front": "姉", "back": "언니", "sub": "eonni", "ex": "언니가 한 명 있어요.", "exSub": "eonniga han myeong isseoyo.", "exEn": "姉が一人いる。", "level": 0, "next": 0}, {"id": 912003, "front": "兄", "back": "형", "sub": "hyeong", "ex": "형은 대학생이에요.", "exSub": "hyeongeun daehaksaengieyo.", "exEn": "兄は大学生だ。", "level": 0, "next": 0}, {"id": 912004, "front": "弟・妹", "back": "동생", "sub": "dongsaeng", "ex": "동생이 두 명 있어요.", "exSub": "dongsaengi du myeong isseoyo.", "exEn": "弟か妹が二人いる。", "level": 0, "next": 0}, {"id": 912005, "front": "家族", "back": "가족", "sub": "gajok", "ex": "가족이 몇 명이에요?", "exSub": "gajogi myeot myeongieyo?", "exEn": "家族は何人ですか？", "level": 0, "next": 0}, {"id": 912006, "front": "子ども", "back": "아이", "sub": "ai", "ex": "아이가 정말 귀여워요.", "exSub": "aiga jeongmal gwiyeowoyo.", "exEn": "その子は本当にかわいい。", "level": 0, "next": 0}, {"id": 912007, "front": "〜時", "back": "시", "sub": "si", "ex": "지금 세 시예요.", "exSub": "jigeum se siyeyo.", "exEn": "今3時だ。", "level": 0, "next": 0}, {"id": 912008, "front": "分", "back": "분", "sub": "bun", "ex": "십 분만 기다려 주세요.", "exSub": "sip bunman gidaryeo juseyo.", "exEn": "あと10分だけ待ってください。", "level": 0, "next": 0}, {"id": 912009, "front": "朝", "back": "아침", "sub": "achim", "ex": "아침에 커피를 마셔요.", "exSub": "achime keopireul masyeoyo.", "exEn": "朝はコーヒーを飲む。", "level": 0, "next": 0}, {"id": 912010, "front": "夕方・晩", "back": "저녁", "sub": "jeonyeok", "ex": "저녁에 운동을 해요.", "exSub": "jeonyeoge undongeul haeyo.", "exEn": "夕方に運動する。", "level": 0, "next": 0}, {"id": 912011, "front": "夜", "back": "밤", "sub": "bam", "ex": "밤에 잠을 잘 자요.", "exSub": "bame jameul jal jayo.", "exEn": "夜はよく眠れる。", "level": 0, "next": 0}, {"id": 912012, "front": "昨日", "back": "어제", "sub": "eoje", "ex": "어제 친구를 만났어요.", "exSub": "eoje chingureul mannasseoyo.", "exEn": "昨日友達に会った。", "level": 0, "next": 0}, {"id": 912013, "front": "週", "back": "주", "sub": "ju", "ex": "다음 주에 여행을 가요.", "exSub": "daeum jue yeohaengeul gayo.", "exEn": "来週旅行に行く。", "level": 0, "next": 0}, {"id": 912014, "front": "年", "back": "년", "sub": "nyeon", "ex": "한국에 온 지 일 년 됐어요.", "exSub": "hanguge on ji il nyeon dwaesseoyo.", "exEn": "韓国に来て一年になる。", "level": 0, "next": 0}, {"id": 912015, "front": "買う", "back": "사다", "sub": "sada", "ex": "빵을 사러 가요.", "exSub": "ppangeul sareo gayo.", "exEn": "パンを買いに行く。", "level": 0, "next": 0}, {"id": 912016, "front": "作る", "back": "만들다", "sub": "mandeulda", "ex": "저녁을 만들었어요.", "exSub": "jeonyeogeul mandeureosseoyo.", "exEn": "夕食を作った。", "level": 0, "next": 0}, {"id": 912017, "front": "開ける", "back": "열다", "sub": "yeolda", "ex": "창문을 열어 주세요.", "exSub": "changmuneul yeoreo juseyo.", "exEn": "窓を開けてください。", "level": 0, "next": 0}, {"id": 912018, "front": "閉める", "back": "닫다", "sub": "datda", "ex": "문을 닫아 주세요.", "exSub": "muneul dada juseyo.", "exEn": "ドアを閉めてください。", "level": 0, "next": 0}, {"id": 912019, "front": "座る", "back": "앉다", "sub": "anda", "ex": "여기 앉으세요.", "exSub": "yeogi anjeuseyo.", "exEn": "ここに座ってください。", "level": 0, "next": 0}, {"id": 912020, "front": "眠る", "back": "자다", "sub": "jada", "ex": "보통 열한 시에 자요.", "exSub": "botong yeolhan sie jayo.", "exEn": "たいてい11時に寝る。", "level": 0, "next": 0}, {"id": 912021, "front": "目を覚ます", "back": "일어나다", "sub": "ireonada", "ex": "매일 일곱 시에 일어나요.", "exSub": "maeil ilgop sie ireonayo.", "exEn": "毎日7時に起きる。", "level": 0, "next": 0}, {"id": 912022, "front": "会う", "back": "만나다", "sub": "mannada", "ex": "내일 만날 수 있어요?", "exSub": "naeil mannal su isseoyo?", "exEn": "明日会える？", "level": 0, "next": 0}, {"id": 912023, "front": "待つ", "back": "기다리다", "sub": "gidarida", "ex": "잠깐만 기다려 주세요.", "exSub": "jamkkanman gidaryeo juseyo.", "exEn": "少し待ってください。", "level": 0, "next": 0}, {"id": 912024, "front": "助ける・手伝う", "back": "돕다", "sub": "dopda", "ex": "좀 도와주세요.", "exSub": "jom dowajuseyo.", "exEn": "手伝ってください。", "level": 0, "next": 0}, {"id": 912025, "front": "始める", "back": "시작하다", "sub": "sijakhada", "ex": "수업이 아홉 시에 시작해요.", "exSub": "sueobi ahop sie sijakhaeyo.", "exEn": "授業は9時に始まる。", "level": 0, "next": 0}, {"id": 912026, "front": "終える・終わる", "back": "끝나다", "sub": "kkeutnada", "ex": "일이 끝났어요.", "exSub": "iri kkeutnasseoyo.", "exEn": "仕事が終わった。", "level": 0, "next": 0}, {"id": 912027, "front": "考える", "back": "생각하다", "sub": "saenggakhada", "ex": "저는 그렇게 생각해요.", "exSub": "jeoneun geureoke saenggakhaeyo.", "exEn": "そう思う。", "level": 0, "next": 0}, {"id": 912028, "front": "必要とする", "back": "필요하다", "sub": "piryohada", "ex": "도움이 필요해요.", "exSub": "doumi piryohaeyo.", "exEn": "助けが必要だ。", "level": 0, "next": 0}, {"id": 912029, "front": "歩く", "back": "걷다", "sub": "geotda", "ex": "공원을 걸어요.", "exSub": "gongwoneul georeoyo.", "exEn": "公園を散歩する。", "level": 0, "next": 0}, {"id": 912030, "front": "きれいな・かわいい", "back": "예쁘다", "sub": "yeppeuda", "ex": "그 꽃이 정말 예뻐요.", "exSub": "geu kkochi jeongmal yeppeoyo.", "exEn": "あの花は本当にきれいだ。", "level": 0, "next": 0}, {"id": 912031, "front": "新しい", "back": "새롭다", "sub": "saeropda", "ex": "새로운 일을 시작했어요.", "exSub": "saeroun ireul sijakhaesseoyo.", "exEn": "新しい仕事を始めた。", "level": 0, "next": 0}, {"id": 912032, "front": "高い（値段）", "back": "비싸다", "sub": "bissada", "ex": "이 가방은 너무 비싸요.", "exSub": "i gabangeun neomu bissayo.", "exEn": "このかばんは高すぎる。", "level": 0, "next": 0}, {"id": 912033, "front": "安い", "back": "싸다", "sub": "ssada", "ex": "이 식당은 정말 싸요.", "exSub": "i sikdangeun jeongmal ssayo.", "exEn": "このレストランは本当に安い。", "level": 0, "next": 0}, {"id": 912034, "front": "暑い（天気）", "back": "덥다", "sub": "deopda", "ex": "오늘 날씨가 너무 더워요.", "exSub": "oneul nalssiga neomu deowoyo.", "exEn": "今日は暑すぎる。", "level": 0, "next": 0}, {"id": 912035, "front": "寒い（天気）", "back": "춥다", "sub": "chupda", "ex": "겨울에는 아주 추워요.", "exSub": "gyeoureneun aju chuwoyo.", "exEn": "冬はとても寒い。", "level": 0, "next": 0}, {"id": 912036, "front": "簡単な", "back": "쉽다", "sub": "swipda", "ex": "이 문제는 쉬워요.", "exSub": "i munjeneun swiwoyo.", "exEn": "この問題は簡単だ。", "level": 0, "next": 0}, {"id": 912037, "front": "難しい", "back": "어렵다", "sub": "eoryeopda", "ex": "한국어는 조금 어려워요.", "exSub": "hangugeoneun jogeum eoryeowoyo.", "exEn": "韓国語は少し難しい。", "level": 0, "next": 0}, {"id": 912038, "front": "楽しい・おもしろい", "back": "재미있다", "sub": "jaemiitda", "ex": "이 영화 정말 재미있어요.", "exSub": "i yeonghwa jeongmal jaemiisseoyo.", "exEn": "この映画は本当におもしろい。", "level": 0, "next": 0}, {"id": 912039, "front": "忙しい", "back": "바쁘다", "sub": "bappeuda", "ex": "요즘 너무 바빠요.", "exSub": "yojeum neomu bappayo.", "exEn": "最近とても忙しい。", "level": 0, "next": 0}, {"id": 912040, "front": "疲れた", "back": "피곤하다", "sub": "pigonhada", "ex": "오늘 너무 피곤해요.", "exSub": "oneul neomu pigonhaeyo.", "exEn": "今日はとても疲れた。", "level": 0, "next": 0}, {"id": 912041, "front": "痛む・具合が悪い", "back": "아프다", "sub": "apeuda", "ex": "머리가 아파요.", "exSub": "meoriga apayo.", "exEn": "頭が痛い。", "level": 0, "next": 0}, {"id": 912042, "front": "天気", "back": "날씨", "sub": "nalssi", "ex": "오늘 날씨가 어때요?", "exSub": "oneul nalssiga eottaeyo?", "exEn": "今日の天気はどう？", "level": 0, "next": 0}, {"id": 912043, "front": "車", "back": "차", "sub": "cha", "ex": "차로 회사에 가요.", "exSub": "charo hoesae gayo.", "exEn": "車で仕事に行く。", "level": 0, "next": 0}, {"id": 912044, "front": "電話", "back": "전화", "sub": "jeonhwa", "ex": "나중에 전화할게요.", "exSub": "najunge jeonhwahalgeyo.", "exEn": "あとで電話するね。", "level": 0, "next": 0}, {"id": 912045, "front": "服", "back": "옷", "sub": "ot", "ex": "새 옷을 샀어요.", "exSub": "sae oseul sasseoyo.", "exEn": "新しい服を買った。", "level": 0, "next": 0}, {"id": 912046, "front": "映画", "back": "영화", "sub": "yeonghwa", "ex": "주말에 영화를 봤어요.", "exSub": "jumare yeonghwareul bwasseoyo.", "exEn": "週末に映画を見た。", "level": 0, "next": 0}, {"id": 912047, "front": "音楽", "back": "음악", "sub": "eumak", "ex": "저는 음악을 좋아해요.", "exSub": "jeoneun eumageul joahaeyo.", "exEn": "音楽が好きだ。", "level": 0, "next": 0}, {"id": 912048, "front": "会社", "back": "회사", "sub": "hoesa", "ex": "회사가 어디예요?", "exSub": "hoesaga eodiyeyo?", "exEn": "会社はどこにありますか？", "level": 0, "next": 0}, {"id": 912049, "front": "問題", "back": "문제", "sub": "munje", "ex": "문제가 하나 있어요.", "exSub": "munjega hana isseoyo.", "exEn": "一つ問題がある。", "level": 0, "next": 0}]}, {"id": "ko-convo", "title": "일상 회화", "desc": "少し長めの日常会話（表=日本語）", "color": ["#8b5cf6", "#6366f1"], "type": "sentence", "cards": [{"id": 915000, "front": "今週末は何をしたの？", "back": "주말에 뭐 했어요?", "sub": "jumare mwo haesseoyo?", "level": 0, "next": 0}, {"id": 915001, "front": "まだ勉強中なので、ゆっくり話してください。", "back": "아직 배우고 있으니까 천천히 말해 주세요.", "sub": "ajik baeugo isseunikka cheoncheonhi malhae juseyo.", "level": 0, "next": 0}, {"id": 915002, "front": "近くのいいレストランを教えていただけますか？", "back": "근처에 괜찮은 식당 좀 추천해 주시겠어요?", "sub": "geuncheoe gwaenchaneun sikdang jom chucheonhae jusigesseoyo?", "level": 0, "next": 0}, {"id": 915003, "front": "今日は雨が降ると思う。", "back": "오늘 비가 올 것 같아요.", "sub": "oneul biga ol geot gatayo.", "level": 0, "next": 0}, {"id": 915004, "front": "すみません、聞き取れませんでした。もう一度言ってもらえますか？", "back": "죄송한데, 잘 못 알아들었어요. 다시 말해 주시겠어요?", "sub": "joesonghande, jal mot aradeureosseoyo. dasi malhae jusigesseoyo?", "level": 0, "next": 0}, {"id": 915005, "front": "駅までどれくらいかかりますか？", "back": "역까지 얼마나 걸려요?", "sub": "yeokkkaji eolmana geolryeoyo?", "level": 0, "next": 0}, {"id": 915006, "front": "2名で予約したいのですが。", "back": "두 명 예약하고 싶은데요.", "sub": "du myeong yeyakhago sipeundeyo.", "level": 0, "next": 0}, {"id": 915007, "front": "カードで払えますか？", "back": "카드로 계산할 수 있어요?", "sub": "kadeuro gyesanhal su isseoyo?", "level": 0, "next": 0}, {"id": 915008, "front": "明日は何時に開きますか？", "back": "내일 몇 시에 문 열어요?", "sub": "naeil myeot sie mun yeoreoyo?", "level": 0, "next": 0}, {"id": 915009, "front": "今日は会えて本当によかった。", "back": "오늘 만나서 정말 반가웠어요.", "sub": "oneul mannaseo jeongmal bangawosseoyo.", "level": 0, "next": 0}, {"id": 915010, "front": "地下鉄の駅を探しています。どこですか？", "back": "지하철역을 찾고 있는데요. 어디예요?", "sub": "jihacheoryeogeul chatgo itneundeyo. eodiyeyo?", "level": 0, "next": 0}, {"id": 915011, "front": "今度一緒に夕食を食べよう。", "back": "언제 같이 저녁 먹어요.", "sub": "eonje gati jeonyeok meogeoyo.", "level": 0, "next": 0}, {"id": 915012, "front": "最近、仕事でとても忙しい。", "back": "요즘 일 때문에 너무 바빠요.", "sub": "yojeum il ttaemune neomu bappayo.", "level": 0, "next": 0}, {"id": 915013, "front": "気をつけてお帰りください。", "back": "조심히 잘 들어가세요.", "sub": "josimhi jal deureogaseyo.", "level": 0, "next": 0}, {"id": 915014, "front": "これ、別の色はありますか？", "back": "이거 다른 색깔도 있어요?", "sub": "igeo dareun saekkkaldo isseoyo?", "level": 0, "next": 0}, {"id": 915015, "front": "今日は体調が悪いので家で休みます。", "back": "오늘 몸이 안 좋아서 집에서 쉴 거예요.", "sub": "oneul momi an joaseo jibeseo swil geoyeyo.", "level": 0, "next": 0}, {"id": 915016, "front": "すみません、写真を撮ってもらえますか？", "back": "저기요, 사진 좀 찍어 주시겠어요?", "sub": "jeogiyo, sajin jom jjigeo jusigesseoyo?", "level": 0, "next": 0}, {"id": 915017, "front": "どんな食べ物が好き？", "back": "어떤 음식을 좋아해요?", "sub": "eotteon eumsigeul joahaeyo?", "level": 0, "next": 0}, {"id": 915018, "front": "少し遅れるかもしれないので、待っててね。", "back": "조금 늦을 것 같으니까 잠깐만 기다려 주세요.", "sub": "jogeum neujeul geot gateunikka jamkkanman gidaryeo juseyo.", "level": 0, "next": 0}, {"id": 915019, "front": "今日はいろいろありがとう。", "back": "오늘 여러 가지로 감사했습니다.", "sub": "oneul yeoreo gajiro gamsahaetseumnida.", "level": 0, "next": 0}]}];
+const KEY = 'vmp-ko';
+const LANG = 'ko-KR';
+const DAY = 86400000;
+function speak(text){ try{ if(!('speechSynthesis' in window)) return; speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text); u.lang=LANG; u.rate=0.9; speechSynthesis.speak(u); }catch(e){} }
+let decks = load();
+let session = null;
+let editingDeckId = null;
+let editCard = null;
+const smartType = new Map();
+
+function load(){ try{ const s=localStorage.getItem(KEY); return s?JSON.parse(s):structuredClone(DEFAULT_DECKS); }catch(e){ return structuredClone(DEFAULT_DECKS); } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(decks)); }catch(e){} }
+const $ = s => document.querySelector(s);
+const now = () => Date.now();
+const isDue = c => !c.next || c.next <= now();
+function show(id){ ['home','game','add','settings','edit'].forEach(s=>$('#'+s).classList.toggle('hidden', s!==id)); }
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  let dueAll = 0;
+  decks.forEach(d => d.cards.forEach(c => { if(isDue(c)) dueAll++; }));
+  $('#dueTotal').textContent = dueAll;
+  $('#review').classList.toggle('empty', dueAll===0);
+
+  const list = $('#deckList'); list.innerHTML='';
+  decks.forEach(d => {
+    const due = d.cards.filter(isDue).length;
+    const grad = `linear-gradient(160deg,${d.color[0]},${d.color[1]})`;
+    const el = document.createElement('div'); el.className='deck';
+    el.innerHTML = `
+      <div class="bar" style="background:${grad}"></div>
+      <button class="edit" data-ed="${d.id}">✎</button>
+      <h3>${esc(d.title)}</h3>
+      <div class="d">${esc(d.desc||'')}</div>
+      <div class="row">
+        <span class="pill">${d.cards.length}語</span>
+        ${ due ? `<span class="pill due">⚠ ${due}</span>` : `<span class="pill" style="color:#10b981;background:#ecfdf5">✓ 完了</span>` }
+        <button class="play" data-play="${d.id}" style="background:${grad}">▶</button>
+      </div>`;
+    list.appendChild(el);
+  });
+  list.querySelectorAll('[data-play]').forEach(b=> b.onclick=()=>startDeck(b.dataset.play));
+  list.querySelectorAll('[data-ed]').forEach(b=> b.onclick=()=>openEdit(b.dataset.ed));
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
+/* ---------- START ---------- */
+function startDeck(id){ const d=decks.find(x=>x.id===id); if(!d||!d.cards.length) return; begin(d.cards.slice(), d, false); }
+function startSmart(){
+  let cards=[]; smartType.clear();
+  decks.forEach(d=> d.cards.forEach(c=>{ if(isDue(c)){ smartType.set(c,d.type); cards.push(c); }}));
+  if(!cards.length){ alert('復習する単語がまだ無いよ！'); return; }
+  cards.sort(()=>Math.random()-.5);
+  begin(cards, {title:'SMART REVIEW', color:['#f5443a','#ff7a3d'], type:'mix'}, true);
+}
+function begin(cards, deck, smart){
+  session={ cards, i:0, deck, smart, stats:{k:0,u:0}, dragX:0, dragging:false, startX:0, flipped:false };
+  show('game');
+  $('#gTag').textContent = smart ? '🔥 SMART REVIEW' : deck.title;
+  renderCard();
+}
+
+/* ---------- GAME ---------- */
+function renderCard(){
+  const s=session, stage=$('#stage');
+  $('#gProg').textContent = `${Math.min(s.i+1,s.cards.length)} / ${s.cards.length}`;
+  if(s.i>=s.cards.length){
+    $('#gActions').classList.add('hidden'); $('#tint').style.background='transparent';
+    stage.innerHTML = `<div class="done-card"><h2>Session Complete! 🎉</h2>
+      <div class="done-grid"><div class="box k"><b>${s.stats.k}</b><span>覚えた</span></div>
+      <div class="box u"><b>${s.stats.u}</b><span>復習</span></div></div>
+      <button class="primary" id="homeBtn">ホームに戻る</button></div>`;
+    $('#homeBtn').onclick=goHome; return;
+  }
+  $('#gActions').classList.remove('hidden');
+  const c=s.cards[s.i];
+  const type=s.smart ? (smartType.get(c)||'word') : s.deck.type;
+  const sent = type==='sentence';
+  const grad=`linear-gradient(160deg,${s.deck.color[0]},${s.deck.color[1]})`;
+  const lvl=c.level||0;
+  const dots=Array.from({length:5},(_,i)=>`<i class="${i<lvl?'on':''}"></i>`).join('');
+  const exBlock = c.ex ? `<div class="ex"><div class="exh">${esc(c.ex)} <button class="spk" data-say="${esc(c.ex)}">🔊</button></div>
+      ${c.exSub?`<div class="exp">${esc(c.exSub)}</div>`:''}
+      ${c.exEn?`<div class="exe">${esc(c.exEn)}</div>`:''}</div>` : '';
+  stage.innerHTML = `<div class="card" id="card">
+    <div class="face front">
+      <div class="stamp got">GOT IT</div><div class="stamp forgot">FORGOT</div>
+      <div class="word ${sent?'sm':''}">${esc(c.front)}</div>
+      <div class="lvl">${dots}</div><div class="flip-hint">TAP TO FLIP</div>
+    </div>
+    <div class="face back" style="background:${grad}">
+      <div class="main ${sent?'sm':''}">${esc(c.back)} <button class="spk" data-say="${esc(c.back)}">🔊</button></div>
+      ${c.sub?`<div class="pin">${esc(c.sub)}</div>`:''}
+      ${exBlock}
+    </div></div>`;
+  s.flipped=false; s.dragX=0; bindCard();
+}
+function gMove(e){ if(!session||!session.dragging) return; session.dragX=(px(e)-session.startX)*1.1; paint(); }
+function gUp(){ if(!session||!session.dragging) return; session.dragging=false;
+  if(session.dragX>100) swipe(true); else if(session.dragX<-100) swipe(false); else { session.dragX=0; paint(); } }
+window.addEventListener('mousemove',gMove); window.addEventListener('mouseup',gUp);
+function bindCard(){
+  const card=$('#card');
+  const down=e=>{ session.dragging=true; session.startX=px(e); };
+  card.addEventListener('mousedown',down);
+  card.addEventListener('touchstart',down,{passive:true});
+  card.addEventListener('touchmove',gMove,{passive:true});
+  card.addEventListener('touchend',gUp);
+  card.addEventListener('click',()=>{ if(Math.abs(session.dragX)<6){ session.flipped=!session.flipped; paint(); } });
+  document.querySelectorAll('#stage .spk').forEach(b=>{
+    const stop=e=>e.stopPropagation();
+    b.addEventListener('mousedown',stop); b.addEventListener('touchstart',stop,{passive:true});
+    b.addEventListener('click',e=>{ e.stopPropagation(); speak(b.dataset.say); });
+  });
+}
+function px(e){ return e.touches ? e.touches[0].clientX : e.clientX; }
+function paint(){
+  const card=$('#card'); if(!card) return; const x=session.dragX;
+  card.style.transition = session.dragging ? 'none' : 'transform .3s cubic-bezier(.2,.8,.2,1)';
+  card.style.transform = `translateX(${x}px) rotate(${x*.05}deg) rotateY(${session.flipped?180:0}deg)`;
+  card.querySelector('.stamp.got').style.opacity = x>50?1:0;
+  card.querySelector('.stamp.forgot').style.opacity = x<-50?1:0;
+  const t=$('#tint');
+  t.style.background = x>0?`rgba(16,185,129,${Math.min(x/300,.22)})` : x<0?`rgba(244,63,94,${Math.min(-x/300,.22)})`:'transparent';
+}
+function swipe(known){
+  const s=session, c=s.cards[s.i];
+  if(known){ c.level=Math.min((c.level||0)+1,5); c.next=now()+c.level*3*DAY; s.stats.k++; }
+  else{ c.level=0; c.next=now()+60000; s.stats.u++; }
+  save();
+  s.dragX = known?600:-600; paint();
+  setTimeout(()=>{ s.i++; $('#tint').style.background='transparent'; renderCard(); }, 200);
+}
+function goHome(){ session=null; show('home'); renderHome(); }
+
+/* ---------- ADD ---------- */
+function openAdd(preDeckId, card){
+  editCard=card||null;
+  fillDeckSelect($('#aDeck'), true);
+  if(preDeckId) $('#aDeck').value=preDeckId;
+  toggleNew();
+  $('#aNewTitle').value='';
+  $('#aFront').value=card?card.front:''; $('#aBack').value=card?card.back:'';
+  $('#aSub').value=(card&&card.sub)||''; $('#aEx').value=(card&&card.ex)||'';
+  $('#aExSub').value=(card&&card.exSub)||''; $('#aExEn').value=(card&&card.exEn)||'';
+  $('#aDeckWrap').style.display=card?'none':'';
+  $('#add .fhead h1').textContent=card?'カードを編集':'単語を追加';
+  $('#aSave').textContent=card?'保存する':'追加する';
+  show('add');
+}
+function toggleNew(){ $('#aNewWrap').style.display = $('#aDeck').value==='__new__' ? 'block':'none'; }
+function fillDeckSelect(sel, withNew){
+  sel.innerHTML = (withNew?'<option value="__new__">🆕 新しいデッキ</option>':'') +
+    decks.map(d=>`<option value="${d.id}">${esc(d.title)}</option>`).join('');
+}
+function saveAdd(){
+  const front=$('#aFront').value.trim(), back=$('#aBack').value.trim();
+  if(!front||!back){ alert('表と裏は必須だよ'); return; }
+  const sub=$('#aSub').value.trim(), ex=$('#aEx').value.trim(), exSub=$('#aExSub').value.trim(), exEn=$('#aExEn').value.trim();
+  if(editCard){
+    editCard.front=front; editCard.back=back;
+    const set=(k,v)=>{ if(v) editCard[k]=v; else delete editCard[k]; };
+    set('sub',sub); set('ex',ex); set('exSub',exSub); set('exEn',exEn);
+    save(); const did=editingDeckId; editCard=null; openEdit(did); return;
+  }
+  const card={ id:Date.now(), front, back, level:0, next:0 };
+  if(sub) card.sub=sub; if(ex) card.ex=ex; if(exSub) card.exSub=exSub; if(exEn) card.exEn=exEn;
+  let did=$('#aDeck').value;
+  if(did==='__new__'){
+    const t=$('#aNewTitle').value.trim()||'新しいデッキ';
+    decks.push({ id:'user-'+Date.now(), title:t, desc:'自分で追加', color:['#22c55e','#14b8a6'], type:'word', cards:[card] });
+  } else { decks.find(d=>d.id===did).cards.push(card); }
+  save(); goHome();
+}
+
+/* ---------- SETTINGS ---------- */
+function openSettings(){ fillDeckSelect($('#iDeck'), true); $('#iText').value=''; show('settings'); }
+function runImport(){
+  let arr; try{ arr=JSON.parse($('#iText').value); }catch(e){ alert('JSONの形式が不正だよ'); return; }
+  if(!Array.isArray(arr)){ alert('配列 [ ... ] で貼ってね'); return; }
+  const cards=arr.filter(x=>x&&x.front&&x.back).map((x,i)=>({ id:Date.now()+i, front:String(x.front), back:String(x.back),
+    ...(x.sub?{sub:String(x.sub)}:{}), ...(x.ex?{ex:String(x.ex)}:{}), ...(x.exSub?{exSub:String(x.exSub)}:{}),
+    ...(x.exEn?{exEn:String(x.exEn)}:{}), level:0, next:0 }));
+  if(!cards.length){ alert('front と back を持つ項目が無いよ'); return; }
+  let did=$('#iDeck').value;
+  if(did==='__new__'){ decks.push({ id:'user-'+Date.now(), title:'インポート', desc:'JSONから追加', color:['#22c55e','#14b8a6'], type:'word', cards }); }
+  else { decks.find(d=>d.id===did).cards.push(...cards); }
+  save(); alert(cards.length+'語を追加したよ！'); goHome();
+}
+function exportAll(){ navigator.clipboard.writeText(JSON.stringify(decks,null,2)).then(()=>alert('コピーしたよ')).catch(()=>alert('コピーできなかった。localhost経由で開くとコピーできるよ')); }
+function resetAll(){ if(confirm('進捗と自分で追加した分を全部消して初期状態に戻す？')){ decks=structuredClone(DEFAULT_DECKS); save(); goHome(); } }
+
+/* ---------- EDIT ---------- */
+function openEdit(id){
+  editingDeckId=id; const d=decks.find(x=>x.id===id); if(!d) return;
+  $('#edTitle').textContent=d.title;
+  const list=$('#edList'); list.innerHTML='';
+  d.cards.forEach(c=>{
+    const row=document.createElement('div'); row.className='erow';
+    row.innerHTML=`<div class="ef"><b>${esc(c.front)}</b><span>${esc(c.back)}</span></div><button class="del">削除</button>`;
+    row.querySelector('.ef').onclick=()=>openAdd(id,c);
+    row.querySelector('.del').onclick=()=>{ if(confirm('このカードを削除する？')){ d.cards=d.cards.filter(x=>x!==c); save(); openEdit(id); } };
+    list.appendChild(row);
+  });
+  if(!d.cards.length) list.innerHTML='<div class="hint">カードがありません。</div>';
+  show('edit');
+}
+
+/* ---------- WIRE ---------- */
+$('#startBtn').onclick=startSmart;
+$('#addBtn').onclick=()=>openAdd();
+$('#gearBtn').onclick=openSettings;
+$('#gBack').onclick=goHome;
+$('#yesBtn').onclick=()=>{ session.dragX=600; paint(); swipe(true); };
+$('#noBtn').onclick=()=>{ session.dragX=-600; paint(); swipe(false); };
+$('#flipBtn').onclick=()=>{ session.flipped=!session.flipped; paint(); };
+$('#addBack').onclick=()=>{ if(editCard){ const did=editingDeckId; editCard=null; openEdit(did); } else goHome(); };
+$('#aDeck').onchange=toggleNew; $('#aSave').onclick=saveAdd;
+$('#setBack').onclick=goHome; $('#iRun').onclick=runImport; $('#expBtn').onclick=exportAll; $('#resetBtn').onclick=resetAll;
+$('#edBack').onclick=goHome; $('#edAdd').onclick=()=>openAdd(editingDeckId);
+$('#adX').onclick=()=>$('#ad').style.display='none';
+
+// language switcher (4言語)
+const APPS=[
+  {code:'en',file:'VocabMatch.html',name:'Vocab Match',label:'英語',badge:'EN',grad:['#4f46e5','#3b82f6']},
+  {code:'zh',file:'ChineseMatch.html',name:'Chinese Match',label:'中国語',badge:'中',grad:['#ef4444','#f59e0b']},
+  {code:'ko',file:'KoreanMatch.html',name:'Korean Match',label:'韓国語',badge:'한',grad:['#0ea5e9','#6366f1']},
+  {code:'de',file:'GermanMatch.html',name:'German Match',label:'ドイツ語',badge:'DE',grad:['#111827','#f59e0b']},
+];
+const CUR=LANG.slice(0,2);
+const curApp=APPS.find(a=>a.code===CUR)||APPS[0];
+$('#langName').textContent=curApp.name;
+$('#langMenu').innerHTML=APPS.map(a=>`<a href="${a.file}" class="${a.code===CUR?'cur':''}"><span class="lb" style="background:linear-gradient(160deg,${a.grad[0]},${a.grad[1]})">${a.badge}</span><span>${a.label} · ${a.name}</span></a>`).join('');
+function toggleLang(open){
+  const show = (open===undefined) ? $('#langMenu').classList.contains('hidden') : open;
+  $('#langMenu').classList.toggle('hidden', !show);
+  $('#langBack').classList.toggle('hidden', !show);
+}
+$('#langBtn').onclick=()=>toggleLang();
+$('#langBack').onclick=()=>toggleLang(false);
+$('#langMenu').querySelector('a.cur').onclick=(e)=>{ e.preventDefault(); toggleLang(false); }; // 現在の言語は閉じるだけ
+
+renderHome();
+</script>
+</body>
+</html>

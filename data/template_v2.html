@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>/*__TITLE__*/</title>
+<style>
+  *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{ --bg:#f3f4f6; --card:#ffffff; --ink:#1f2937; --muted:#9ca3af; --line:#eef2f7; --accent:#6366f1; }
+  html,body{ height:100%; }
+  body{ font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Segoe UI",Roboto,sans-serif;
+    background:#e5e7eb; color:var(--ink); display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  #app{ width:100%; max-width:430px; height:100vh; max-height:930px; background:var(--bg);
+    position:relative; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 30px 80px rgba(0,0,0,.25); }
+  @media(min-width:480px){ #app{ height:910px; border-radius:34px; } }
+  .screen{ position:absolute; inset:0; display:flex; flex-direction:column; background:var(--bg); }
+  .hidden{ display:none !important; }
+  .scroll{ flex:1; overflow-y:auto; }
+  .ic{ display:inline-flex; align-items:center; justify-content:center; }
+
+  /* header */
+  .top{ display:flex; align-items:center; justify-content:space-between; padding:52px 22px 14px; background:var(--bg); }
+  .top .title{ display:flex; align-items:center; gap:8px; font-size:22px; font-weight:900; letter-spacing:-.3px;
+    background:none; border:none; color:inherit; cursor:pointer; padding:6px 8px; border-radius:12px; }
+  .top .title:active{ background:#e9ebf0; }
+  .top .title .bk{ color:var(--accent); }
+  .top .title .chev{ font-size:13px; color:#a0a6b0; margin-left:-2px; }
+  .langback{ position:absolute; inset:0; z-index:40; }
+  .langmenu{ position:absolute; top:92px; left:50%; transform:translateX(-50%); z-index:50; width:270px;
+    background:#fff; border-radius:18px; box-shadow:0 14px 40px rgba(17,24,39,.2); padding:8px;
+    animation:menupop .16s ease; }
+  @keyframes menupop{ from{ opacity:0; transform:translate(-50%,-6px); } to{ opacity:1; transform:translate(-50%,0); } }
+  .langmenu a{ display:flex; align-items:center; gap:12px; padding:12px 12px; border-radius:13px;
+    text-decoration:none; color:#1f2937; font-weight:700; font-size:15px; }
+  .langmenu a:active{ background:#f1f5f9; }
+  .langmenu a.cur{ background:#eef0ff; }
+  .langmenu .lb{ width:34px; height:34px; border-radius:11px; flex-shrink:0; color:#fff; font-weight:800;
+    font-size:14px; display:flex; align-items:center; justify-content:center; }
+  .langmenu a.cur::after{ content:'✓'; margin-left:auto; color:var(--accent); font-weight:900; }
+  .rbtn{ width:46px; height:46px; border-radius:999px; border:none; cursor:pointer; background:#eef0f4; color:#6b7280;
+    font-size:20px; display:flex; align-items:center; justify-content:center; }
+  .rbtn.plus{ background:#e7e9ff; color:var(--accent); font-size:26px; font-weight:400; }
+  .rbtn:active{ transform:scale(.92); }
+
+  /* section labels */
+  .slabel{ display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#9199a4;
+    letter-spacing:1.5px; margin:18px 24px 12px; }
+  .slabel .e{ font-size:15px; }
+
+  /* today's review card */
+  .review{ margin:0 22px; border-radius:26px; padding:26px 24px; color:#fff; position:relative; overflow:hidden;
+    background:linear-gradient(120deg,#f5443a,#ff7a3d); box-shadow:0 16px 34px rgba(244,68,58,.32);
+    display:flex; justify-content:space-between; align-items:flex-start; }
+  .review h2{ font-size:27px; font-weight:900; }
+  .review p{ font-size:12.5px; opacity:.92; margin-top:4px; font-weight:600; }
+  .review .start{ margin-top:22px; display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.22);
+    border:none; color:#fff; font-weight:800; font-size:13px; padding:11px 18px; border-radius:999px; cursor:pointer; letter-spacing:.5px; }
+  .review .start:active{ background:rgba(255,255,255,.34); }
+  .review .num{ text-align:right; }
+  .review .num b{ font-size:52px; font-weight:900; line-height:1; display:block; }
+  .review .num span{ font-size:11px; font-weight:800; letter-spacing:2px; opacity:.9; }
+  .review.empty{ background:linear-gradient(120deg,#cbd5e1,#94a3b8); box-shadow:none; }
+
+  /* deck card */
+  .decks{ padding:0 22px 8px; }
+  .deck{ position:relative; background:var(--card); border-radius:22px; padding:20px 20px 18px 26px; margin-bottom:16px;
+    box-shadow:0 6px 18px rgba(17,24,39,.06); overflow:hidden; }
+  .deck .bar{ position:absolute; left:0; top:0; bottom:0; width:7px; }
+  .deck .edit{ position:absolute; top:8px; right:8px; color:#9aa2ad; cursor:pointer; font-size:20px; background:none; border:none; padding:10px; line-height:1; }
+  .deck .edit:active{ color:#6b7280; }
+  .deck h3{ font-size:21px; font-weight:800; }
+  .deck .d{ color:#7a828e; font-size:13px; margin-top:5px; font-weight:600; }
+  .deck .row{ display:flex; align-items:center; gap:10px; margin-top:16px; }
+  .pill{ background:#f1f3f7; color:#8a919c; font-weight:700; font-size:12.5px; padding:5px 12px; border-radius:999px; }
+  .pill.due{ background:#fdecec; color:#ef4444; display:inline-flex; align-items:center; gap:4px; }
+  .deck .play{ margin-left:auto; width:52px; height:52px; border-radius:999px; border:none; cursor:pointer; color:#fff;
+    font-size:19px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(99,102,241,.32); }
+  .deck .play:active{ transform:scale(.9); }
+
+  /* ad space */
+  .ad{ margin-top:auto; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:#e9ebef;
+    color:#aab0ba; font-size:12px; font-weight:800; letter-spacing:2px; position:relative; }
+  .ad .x{ position:absolute; right:14px; color:#b8bec8; cursor:pointer; border:none; background:none; font-size:16px; }
+
+  /* ---------- GAME ---------- */
+  .g-head{ padding:52px 20px 8px; display:flex; align-items:center; justify-content:space-between; z-index:20; }
+  .icon-btn{ width:44px; height:44px; border-radius:999px; border:none; background:#fff; cursor:pointer; font-size:20px;
+    color:#475569; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .g-tag{ text-align:right; }
+  .g-tag .p{ font-size:11px; font-weight:900; letter-spacing:1px; padding:4px 10px; border-radius:8px; background:#eef0ff; color:var(--accent); }
+  .g-tag .prog{ display:block; font-size:12px; color:var(--muted); font-weight:800; margin-top:4px; }
+  .tint{ position:absolute; inset:0; pointer-events:none; transition:background .1s; z-index:1; }
+  .stage{ flex:1; display:flex; align-items:center; justify-content:center; position:relative; padding:0 16px 16px; perspective:1400px; z-index:10; }
+  .card{ position:absolute; width:100%; max-width:340px; aspect-ratio:0.72; cursor:grab; transform-style:preserve-3d; user-select:none; }
+  .card:active{ cursor:grabbing; }
+  .face{ position:absolute; inset:0; border-radius:28px; backface-visibility:hidden; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:26px; text-align:center; box-shadow:0 20px 50px rgba(15,23,42,.18); }
+  .face.front{ background:#fff; border:1px solid #f1f5f9; }
+  .face.back{ color:#fff; transform:rotateY(180deg); text-shadow:0 1px 3px rgba(0,0,0,.28); }
+  .front .word{ font-size:38px; font-weight:800; line-height:1.25; color:#1f2937; }
+  .front .word.sm{ font-size:23px; font-weight:700; line-height:1.45; padding:0 4px; }
+  .back .main{ font-size:60px; font-weight:800; line-height:1.1; }
+  .back .main.sm{ font-size:29px; font-weight:700; line-height:1.4; }
+  .back .pin{ margin-top:14px; font-size:22px; font-weight:600; opacity:.96; }
+  .spk{ border:none; background:rgba(255,255,255,.3); color:#fff; border-radius:999px; cursor:pointer;
+    min-width:40px; min-height:40px; padding:9px; font-size:17px; line-height:1; vertical-align:middle; margin-left:8px; box-sizing:border-box; }
+  .spk:active{ background:rgba(255,255,255,.5); }
+  .back .exh .spk{ min-width:36px; min-height:36px; font-size:14px; padding:8px; margin-left:6px; }
+  .back .ex{ margin-top:20px; width:100%; background:rgba(0,0,0,.1); border-radius:16px; padding:15px 16px; }
+  .back .ex .exh{ font-size:17px; font-weight:600; line-height:1.45; }
+  .back .ex .exp{ font-size:13.5px; opacity:.95; margin-top:6px; }
+  .back .ex .exe{ font-size:13px; opacity:1; margin-top:8px; }
+  .lvl{ position:absolute; bottom:52px; display:flex; gap:6px; }
+  .lvl i{ width:8px; height:8px; border-radius:999px; background:#e2e8f0; }
+  .lvl i.on{ background:#34d399; }
+  .flip-hint{ position:absolute; bottom:24px; font-size:11px; letter-spacing:2px; color:#cbd5e1; font-weight:800; animation:pul 1.6s infinite; }
+  @keyframes pul{ 0%,100%{opacity:.4} 50%{opacity:1} }
+  .stamp{ position:absolute; top:26px; font-size:24px; font-weight:900; padding:6px 13px; border:4px solid; border-radius:12px; opacity:0; transition:opacity .1s; }
+  .stamp.got{ left:26px; color:#10b981; border-color:#10b981; transform:rotate(-14deg); }
+  .stamp.forgot{ right:26px; color:#f43f5e; border-color:#f43f5e; transform:rotate(14deg); }
+  .g-actions{ display:flex; align-items:flex-start; justify-content:center; gap:26px; padding-bottom:34px; z-index:20; }
+  .fabwrap{ display:flex; flex-direction:column; align-items:center; gap:7px; }
+  .fabwrap span{ font-size:11px; font-weight:700; color:#9ca3af; }
+  .fab{ border:none; border-radius:999px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 20px rgba(0,0,0,.12); transition:transform .12s; }
+  .fab:active{ transform:scale(.9); }
+  .fab.big{ width:64px; height:64px; font-size:28px; } .fab.mid{ width:50px; height:50px; font-size:20px; }
+  .fab.no{ color:#f43f5e; } .fab.yes{ color:#10b981; } .fab.flip{ color:var(--accent); }
+  .done-card{ width:88%; max-width:330px; background:#fff; border-radius:28px; padding:34px 26px; text-align:center; box-shadow:0 20px 50px rgba(15,23,42,.15); animation:pop .4s cubic-bezier(.175,.885,.32,1.275); }
+  @keyframes pop{ from{ transform:scale(.9); opacity:0 } to{ transform:scale(1); opacity:1 } }
+  .done-card h2{ font-size:23px; font-weight:900; margin-bottom:20px; }
+  .done-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:26px; }
+  .done-grid .box{ border-radius:16px; padding:18px; } .done-grid .box b{ display:block; font-size:30px; font-weight:900; } .done-grid .box span{ font-size:11px; font-weight:800; }
+  .box.k{ background:#ecfdf5; color:#10b981; } .box.u{ background:#fff1f2; color:#f43f5e; }
+  .primary{ width:100%; padding:16px; border:none; border-radius:16px; background:#1f2937; color:#fff; font-weight:900; font-size:15px; cursor:pointer; }
+  .primary:active{ opacity:.85; }
+
+  /* ---------- FORM (add/settings/edit) ---------- */
+  .fhead{ display:flex; align-items:center; gap:14px; padding:52px 20px 14px; background:#fff; border-bottom:1px solid var(--line); }
+  .fhead h1{ font-size:19px; font-weight:900; }
+  .fhead .bk{ border:none; background:none; font-size:22px; cursor:pointer; color:#475569; }
+  .fbody{ padding:22px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-size:12px; font-weight:800; color:#7a828e; margin-bottom:6px; }
+  .field input, .field select, .field textarea{ width:100%; padding:13px 14px; border:1px solid #e5e7eb; border-radius:13px;
+    font-size:15px; background:#fff; outline:none; font-family:inherit; }
+  .field input:focus, .field textarea:focus, .field select:focus{ border-color:var(--accent); }
+  .field textarea{ resize:none; min-height:88px; }
+  .fbtn{ width:100%; padding:15px; border:none; border-radius:14px; background:var(--accent); color:#fff; font-weight:900; font-size:15px; cursor:pointer; margin-top:4px; }
+  .fbtn:active{ opacity:.9; }
+  .fbtn.ghost{ background:#fff; color:#64748b; border:1px solid #e5e7eb; }
+  .fbtn.danger{ background:#fff1f2; color:#f43f5e; }
+  .hint{ font-size:11.5px; color:#a0a6b0; margin-top:-8px; margin-bottom:14px; }
+  .erow{ display:flex; align-items:center; gap:12px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px; }
+  .erow .ef{ flex:1; min-width:0; cursor:pointer; } .erow .ef b{ font-size:15px; } .erow .ef span{ display:block; color:var(--muted); font-size:13px; }
+  .erow .del{ border:none; background:#fff1f2; color:#f43f5e; border-radius:10px; padding:8px 11px; font-size:14px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- HOME -->
+  <section id="home" class="screen">
+    <div class="top">
+      <button class="rbtn" id="gearBtn">⚙</button>
+      <button class="title" id="langBtn"><span class="bk">📖</span> <span id="langName">Match</span> <span class="chev">▾</span></button>
+      <button class="rbtn plus" id="addBtn">＋</button>
+    </div>
+    <div class="langback hidden" id="langBack"></div>
+    <div class="langmenu hidden" id="langMenu"></div>
+    <div class="scroll">
+      <div class="slabel"><span class="e">⚡</span> TODAY'S REVIEW</div>
+      <div class="review" id="review">
+        <div>
+          <h2>復習モード</h2>
+          <p>忘却曲線に基づいて出題</p>
+          <button class="start" id="startBtn">▶ START SESSION</button>
+        </div>
+        <div class="num"><b id="dueTotal">0</b><span>CARDS</span></div>
+      </div>
+      <div class="slabel"><span class="e">🕐</span> YOUR DECKS</div>
+      <div class="decks" id="deckList"></div>
+    </div>
+    <div class="ad" id="ad">AD SPACE <button class="x" id="adX">✕</button></div>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="screen hidden">
+    <div class="tint" id="tint"></div>
+    <div class="g-head">
+      <button class="icon-btn" id="gBack">←</button>
+      <div class="g-tag"><span class="p" id="gTag">DECK</span><span class="prog" id="gProg">0 / 0</span></div>
+    </div>
+    <div class="stage" id="stage"></div>
+    <div class="g-actions" id="gActions">
+      <div class="fabwrap"><button class="fab big no" id="noBtn">✕</button><span>まだ</span></div>
+      <div class="fabwrap"><button class="fab mid flip" id="flipBtn">↺</button><span>めくる</span></div>
+      <div class="fabwrap"><button class="fab big yes" id="yesBtn">♥</button><span>覚えた</span></div>
+    </div>
+  </section>
+
+  <!-- ADD -->
+  <section id="add" class="screen hidden">
+    <div class="fhead"><button class="bk" id="addBack">←</button><h1>単語を追加</h1></div>
+    <div class="scroll"><div class="fbody">
+      <div class="field" id="aDeckWrap"><label>追加先デッキ</label>
+        <select id="aDeck"></select></div>
+      <div class="field" id="aNewWrap" style="display:none"><label>新規デッキ名</label>
+        <input id="aNewTitle" placeholder="例：旅行フレーズ"></div>
+      <div class="field"><label>表（問題面）</label><input id="aFront" placeholder="例：economy / 経済"></div>
+      <div class="field"><label>裏（答え面）</label><input id="aBack" placeholder="例：economy / 经济"></div>
+      <div class="field"><label>ピンイン / 発音（任意）</label><input id="aSub" placeholder="例：jīng jì"></div>
+      <div class="field"><label>例文（任意）</label><input id="aEx" placeholder="例文（裏面に表示）"></div>
+      <div class="field"><label>例文のピンイン / 発音（任意）</label><input id="aExSub" placeholder="例文の読み"></div>
+      <div class="field"><label>例文の訳（任意）</label><input id="aExEn" placeholder="例文の意味"></div>
+      <button class="fbtn" id="aSave">追加する</button>
+    </div></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings" class="screen hidden">
+    <div class="fhead"><button class="bk" id="setBack">←</button><h1>設定</h1></div>
+    <div class="scroll"><div class="fbody">
+      <div class="field"><label>JSONインポート先</label><select id="iDeck"></select></div>
+      <div class="field"><label>単語データ（JSON配列）</label>
+        <textarea id="iText" placeholder='[{"front":"経済","back":"economy","ex":"...","exEn":"..."}]'></textarea></div>
+      <div class="hint">front / back は必須。sub(ピンイン)・ex(例文)・exEn(訳) は任意。</div>
+      <button class="fbtn" id="iRun">インポート実行</button>
+      <div style="height:22px"></div>
+      <button class="fbtn ghost" id="expBtn">全データをコピー（バックアップ）</button>
+      <div style="height:10px"></div>
+      <button class="fbtn danger" id="resetBtn">進捗と追加分をリセット</button>
+    </div></div>
+  </section>
+
+  <!-- EDIT -->
+  <section id="edit" class="screen hidden">
+    <div class="fhead"><button class="bk" id="edBack">←</button><h1 id="edTitle">編集</h1></div>
+    <div class="scroll"><div class="fbody">
+      <button class="fbtn" id="edAdd" style="margin-bottom:16px">＋ このデッキに追加</button>
+      <div id="edList"></div>
+    </div></div>
+  </section>
+</div>
+
+<script>
+const DEFAULT_DECKS = /*__DATA__*/;
+const KEY = '/*__KEY__*/';
+const LANG = '/*__LANG__*/';
+const DAY = 86400000;
+function speak(text){ try{ if(!('speechSynthesis' in window)) return; speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text); u.lang=LANG; u.rate=0.9; speechSynthesis.speak(u); }catch(e){} }
+let decks = load();
+let session = null;
+let editingDeckId = null;
+let editCard = null;
+const smartType = new Map();
+
+function load(){ try{ const s=localStorage.getItem(KEY); return s?JSON.parse(s):structuredClone(DEFAULT_DECKS); }catch(e){ return structuredClone(DEFAULT_DECKS); } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(decks)); }catch(e){} }
+const $ = s => document.querySelector(s);
+const now = () => Date.now();
+const isDue = c => !c.next || c.next <= now();
+function show(id){ ['home','game','add','settings','edit'].forEach(s=>$('#'+s).classList.toggle('hidden', s!==id)); }
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  let dueAll = 0;
+  decks.forEach(d => d.cards.forEach(c => { if(isDue(c)) dueAll++; }));
+  $('#dueTotal').textContent = dueAll;
+  $('#review').classList.toggle('empty', dueAll===0);
+
+  const list = $('#deckList'); list.innerHTML='';
+  decks.forEach(d => {
+    const due = d.cards.filter(isDue).length;
+    const grad = `linear-gradient(160deg,${d.color[0]},${d.color[1]})`;
+    const el = document.createElement('div'); el.className='deck';
+    el.innerHTML = `
+      <div class="bar" style="background:${grad}"></div>
+      <button class="edit" data-ed="${d.id}">✎</button>
+      <h3>${esc(d.title)}</h3>
+      <div class="d">${esc(d.desc||'')}</div>
+      <div class="row">
+        <span class="pill">${d.cards.length}語</span>
+        ${ due ? `<span class="pill due">⚠ ${due}</span>` : `<span class="pill" style="color:#10b981;background:#ecfdf5">✓ 完了</span>` }
+        <button class="play" data-play="${d.id}" style="background:${grad}">▶</button>
+      </div>`;
+    list.appendChild(el);
+  });
+  list.querySelectorAll('[data-play]').forEach(b=> b.onclick=()=>startDeck(b.dataset.play));
+  list.querySelectorAll('[data-ed]').forEach(b=> b.onclick=()=>openEdit(b.dataset.ed));
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
+/* ---------- START ---------- */
+function startDeck(id){ const d=decks.find(x=>x.id===id); if(!d||!d.cards.length) return; begin(d.cards.slice(), d, false); }
+function startSmart(){
+  let cards=[]; smartType.clear();
+  decks.forEach(d=> d.cards.forEach(c=>{ if(isDue(c)){ smartType.set(c,d.type); cards.push(c); }}));
+  if(!cards.length){ alert('復習する単語がまだ無いよ！'); return; }
+  cards.sort(()=>Math.random()-.5);
+  begin(cards, {title:'SMART REVIEW', color:['#f5443a','#ff7a3d'], type:'mix'}, true);
+}
+function begin(cards, deck, smart){
+  session={ cards, i:0, deck, smart, stats:{k:0,u:0}, dragX:0, dragging:false, startX:0, flipped:false };
+  show('game');
+  $('#gTag').textContent = smart ? '🔥 SMART REVIEW' : deck.title;
+  renderCard();
+}
+
+/* ---------- GAME ---------- */
+function renderCard(){
+  const s=session, stage=$('#stage');
+  $('#gProg').textContent = `${Math.min(s.i+1,s.cards.length)} / ${s.cards.length}`;
+  if(s.i>=s.cards.length){
+    $('#gActions').classList.add('hidden'); $('#tint').style.background='transparent';
+    stage.innerHTML = `<div class="done-card"><h2>Session Complete! 🎉</h2>
+      <div class="done-grid"><div class="box k"><b>${s.stats.k}</b><span>覚えた</span></div>
+      <div class="box u"><b>${s.stats.u}</b><span>復習</span></div></div>
+      <button class="primary" id="homeBtn">ホームに戻る</button></div>`;
+    $('#homeBtn').onclick=goHome; return;
+  }
+  $('#gActions').classList.remove('hidden');
+  const c=s.cards[s.i];
+  const type=s.smart ? (smartType.get(c)||'word') : s.deck.type;
+  const sent = type==='sentence';
+  const grad=`linear-gradient(160deg,${s.deck.color[0]},${s.deck.color[1]})`;
+  const lvl=c.level||0;
+  const dots=Array.from({length:5},(_,i)=>`<i class="${i<lvl?'on':''}"></i>`).join('');
+  const exBlock = c.ex ? `<div class="ex"><div class="exh">${esc(c.ex)} <button class="spk" data-say="${esc(c.ex)}">🔊</button></div>
+      ${c.exSub?`<div class="exp">${esc(c.exSub)}</div>`:''}
+      ${c.exEn?`<div class="exe">${esc(c.exEn)}</div>`:''}</div>` : '';
+  stage.innerHTML = `<div class="card" id="card">
+    <div class="face front">
+      <div class="stamp got">GOT IT</div><div class="stamp forgot">FORGOT</div>
+      <div class="word ${sent?'sm':''}">${esc(c.front)}</div>
+      <div class="lvl">${dots}</div><div class="flip-hint">TAP TO FLIP</div>
+    </div>
+    <div class="face back" style="background:${grad}">
+      <div class="main ${sent?'sm':''}">${esc(c.back)} <button class="spk" data-say="${esc(c.back)}">🔊</button></div>
+      ${c.sub?`<div class="pin">${esc(c.sub)}</div>`:''}
+      ${exBlock}
+    </div></div>`;
+  s.flipped=false; s.dragX=0; bindCard();
+}
+function gMove(e){ if(!session||!session.dragging) return; session.dragX=(px(e)-session.startX)*1.1; paint(); }
+function gUp(){ if(!session||!session.dragging) return; session.dragging=false;
+  if(session.dragX>100) swipe(true); else if(session.dragX<-100) swipe(false); else { session.dragX=0; paint(); } }
+window.addEventListener('mousemove',gMove); window.addEventListener('mouseup',gUp);
+function bindCard(){
+  const card=$('#card');
+  const down=e=>{ session.dragging=true; session.startX=px(e); };
+  card.addEventListener('mousedown',down);
+  card.addEventListener('touchstart',down,{passive:true});
+  card.addEventListener('touchmove',gMove,{passive:true});
+  card.addEventListener('touchend',gUp);
+  card.addEventListener('click',()=>{ if(Math.abs(session.dragX)<6){ session.flipped=!session.flipped; paint(); } });
+  document.querySelectorAll('#stage .spk').forEach(b=>{
+    const stop=e=>e.stopPropagation();
+    b.addEventListener('mousedown',stop); b.addEventListener('touchstart',stop,{passive:true});
+    b.addEventListener('click',e=>{ e.stopPropagation(); speak(b.dataset.say); });
+  });
+}
+function px(e){ return e.touches ? e.touches[0].clientX : e.clientX; }
+function paint(){
+  const card=$('#card'); if(!card) return; const x=session.dragX;
+  card.style.transition = session.dragging ? 'none' : 'transform .3s cubic-bezier(.2,.8,.2,1)';
+  card.style.transform = `translateX(${x}px) rotate(${x*.05}deg) rotateY(${session.flipped?180:0}deg)`;
+  card.querySelector('.stamp.got').style.opacity = x>50?1:0;
+  card.querySelector('.stamp.forgot').style.opacity = x<-50?1:0;
+  const t=$('#tint');
+  t.style.background = x>0?`rgba(16,185,129,${Math.min(x/300,.22)})` : x<0?`rgba(244,63,94,${Math.min(-x/300,.22)})`:'transparent';
+}
+function swipe(known){
+  const s=session, c=s.cards[s.i];
+  if(known){ c.level=Math.min((c.level||0)+1,5); c.next=now()+c.level*3*DAY; s.stats.k++; }
+  else{ c.level=0; c.next=now()+60000; s.stats.u++; }
+  save();
+  s.dragX = known?600:-600; paint();
+  setTimeout(()=>{ s.i++; $('#tint').style.background='transparent'; renderCard(); }, 200);
+}
+function goHome(){ session=null; show('home'); renderHome(); }
+
+/* ---------- ADD ---------- */
+function openAdd(preDeckId, card){
+  editCard=card||null;
+  fillDeckSelect($('#aDeck'), true);
+  if(preDeckId) $('#aDeck').value=preDeckId;
+  toggleNew();
+  $('#aNewTitle').value='';
+  $('#aFront').value=card?card.front:''; $('#aBack').value=card?card.back:'';
+  $('#aSub').value=(card&&card.sub)||''; $('#aEx').value=(card&&card.ex)||'';
+  $('#aExSub').value=(card&&card.exSub)||''; $('#aExEn').value=(card&&card.exEn)||'';
+  $('#aDeckWrap').style.display=card?'none':'';
+  $('#add .fhead h1').textContent=card?'カードを編集':'単語を追加';
+  $('#aSave').textContent=card?'保存する':'追加する';
+  show('add');
+}
+function toggleNew(){ $('#aNewWrap').style.display = $('#aDeck').value==='__new__' ? 'block':'none'; }
+function fillDeckSelect(sel, withNew){
+  sel.innerHTML = (withNew?'<option value="__new__">🆕 新しいデッキ</option>':'') +
+    decks.map(d=>`<option value="${d.id}">${esc(d.title)}</option>`).join('');
+}
+function saveAdd(){
+  const front=$('#aFront').value.trim(), back=$('#aBack').value.trim();
+  if(!front||!back){ alert('表と裏は必須だよ'); return; }
+  const sub=$('#aSub').value.trim(), ex=$('#aEx').value.trim(), exSub=$('#aExSub').value.trim(), exEn=$('#aExEn').value.trim();
+  if(editCard){
+    editCard.front=front; editCard.back=back;
+    const set=(k,v)=>{ if(v) editCard[k]=v; else delete editCard[k]; };
+    set('sub',sub); set('ex',ex); set('exSub',exSub); set('exEn',exEn);
+    save(); const did=editingDeckId; editCard=null; openEdit(did); return;
+  }
+  const card={ id:Date.now(), front, back, level:0, next:0 };
+  if(sub) card.sub=sub; if(ex) card.ex=ex; if(exSub) card.exSub=exSub; if(exEn) card.exEn=exEn;
+  let did=$('#aDeck').value;
+  if(did==='__new__'){
+    const t=$('#aNewTitle').value.trim()||'新しいデッキ';
+    decks.push({ id:'user-'+Date.now(), title:t, desc:'自分で追加', color:['#22c55e','#14b8a6'], type:'word', cards:[card] });
+  } else { decks.find(d=>d.id===did).cards.push(card); }
+  save(); goHome();
+}
+
+/* ---------- SETTINGS ---------- */
+function openSettings(){ fillDeckSelect($('#iDeck'), true); $('#iText').value=''; show('settings'); }
+function runImport(){
+  let arr; try{ arr=JSON.parse($('#iText').value); }catch(e){ alert('JSONの形式が不正だよ'); return; }
+  if(!Array.isArray(arr)){ alert('配列 [ ... ] で貼ってね'); return; }
+  const cards=arr.filter(x=>x&&x.front&&x.back).map((x,i)=>({ id:Date.now()+i, front:String(x.front), back:String(x.back),
+    ...(x.sub?{sub:String(x.sub)}:{}), ...(x.ex?{ex:String(x.ex)}:{}), ...(x.exSub?{exSub:String(x.exSub)}:{}),
+    ...(x.exEn?{exEn:String(x.exEn)}:{}), level:0, next:0 }));
+  if(!cards.length){ alert('front と back を持つ項目が無いよ'); return; }
+  let did=$('#iDeck').value;
+  if(did==='__new__'){ decks.push({ id:'user-'+Date.now(), title:'インポート', desc:'JSONから追加', color:['#22c55e','#14b8a6'], type:'word', cards }); }
+  else { decks.find(d=>d.id===did).cards.push(...cards); }
+  save(); alert(cards.length+'語を追加したよ！'); goHome();
+}
+function exportAll(){ navigator.clipboard.writeText(JSON.stringify(decks,null,2)).then(()=>alert('コピーしたよ')).catch(()=>alert('コピーできなかった。localhost経由で開くとコピーできるよ')); }
+function resetAll(){ if(confirm('進捗と自分で追加した分を全部消して初期状態に戻す？')){ decks=structuredClone(DEFAULT_DECKS); save(); goHome(); } }
+
+/* ---------- EDIT ---------- */
+function openEdit(id){
+  editingDeckId=id; const d=decks.find(x=>x.id===id); if(!d) return;
+  $('#edTitle').textContent=d.title;
+  const list=$('#edList'); list.innerHTML='';
+  d.cards.forEach(c=>{
+    const row=document.createElement('div'); row.className='erow';
+    row.innerHTML=`<div class="ef"><b>${esc(c.front)}</b><span>${esc(c.back)}</span></div><button class="del">削除</button>`;
+    row.querySelector('.ef').onclick=()=>openAdd(id,c);
+    row.querySelector('.del').onclick=()=>{ if(confirm('このカードを削除する？')){ d.cards=d.cards.filter(x=>x!==c); save(); openEdit(id); } };
+    list.appendChild(row);
+  });
+  if(!d.cards.length) list.innerHTML='<div class="hint">カードがありません。</div>';
+  show('edit');
+}
+
+/* ---------- WIRE ---------- */
+$('#startBtn').onclick=startSmart;
+$('#addBtn').onclick=()=>openAdd();
+$('#gearBtn').onclick=openSettings;
+$('#gBack').onclick=goHome;
+$('#yesBtn').onclick=()=>{ session.dragX=600; paint(); swipe(true); };
+$('#noBtn').onclick=()=>{ session.dragX=-600; paint(); swipe(false); };
+$('#flipBtn').onclick=()=>{ session.flipped=!session.flipped; paint(); };
+$('#addBack').onclick=()=>{ if(editCard){ const did=editingDeckId; editCard=null; openEdit(did); } else goHome(); };
+$('#aDeck').onchange=toggleNew; $('#aSave').onclick=saveAdd;
+$('#setBack').onclick=goHome; $('#iRun').onclick=runImport; $('#expBtn').onclick=exportAll; $('#resetBtn').onclick=resetAll;
+$('#edBack').onclick=goHome; $('#edAdd').onclick=()=>openAdd(editingDeckId);
+$('#adX').onclick=()=>$('#ad').style.display='none';
+
+// language switcher (4言語)
+const APPS=[
+  {code:'en',file:'VocabMatch.html',name:'Vocab Match',label:'英語',badge:'EN',grad:['#4f46e5','#3b82f6']},
+  {code:'zh',file:'ChineseMatch.html',name:'Chinese Match',label:'中国語',badge:'中',grad:['#ef4444','#f59e0b']},
+  {code:'ko',file:'KoreanMatch.html',name:'Korean Match',label:'韓国語',badge:'한',grad:['#0ea5e9','#6366f1']},
+  {code:'de',file:'GermanMatch.html',name:'German Match',label:'ドイツ語',badge:'DE',grad:['#111827','#f59e0b']},
+];
+const CUR=LANG.slice(0,2);
+const curApp=APPS.find(a=>a.code===CUR)||APPS[0];
+$('#langName').textContent=curApp.name;
+$('#langMenu').innerHTML=APPS.map(a=>`<a href="${a.file}" class="${a.code===CUR?'cur':''}"><span class="lb" style="background:linear-gradient(160deg,${a.grad[0]},${a.grad[1]})">${a.badge}</span><span>${a.label} · ${a.name}</span></a>`).join('');
+function toggleLang(open){
+  const show = (open===undefined) ? $('#langMenu').classList.contains('hidden') : open;
+  $('#langMenu').classList.toggle('hidden', !show);
+  $('#langBack').classList.toggle('hidden', !show);
+}
+$('#langBtn').onclick=()=>toggleLang();
+$('#langBack').onclick=()=>toggleLang(false);
+$('#langMenu').querySelector('a.cur').onclick=(e)=>{ e.preventDefault(); toggleLang(false); }; // 現在の言語は閉じるだけ
+
+renderHome();
+</script>
+</body>
+</html>

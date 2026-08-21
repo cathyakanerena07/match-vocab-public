@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f3f4f6">
+<title>Match 単語帳 — スワイプで覚える</title>
+<meta name="description" content="スワイプで楽しく覚える多言語単語帳。英語は英検帯でレベル別、中国語・韓国語・ドイツ語は日本語訳つき。忘却曲線ベースの復習＆音声つきで効率よく暗記。">
+<style>
+  *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Segoe UI",Roboto,sans-serif;
+    background:#eef0f4; color:#1f2937; min-height:100vh; min-height:100dvh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px 22px; }
+  .wrap{ width:100%; max-width:440px; }
+  .head{ text-align:center; margin-bottom:32px; }
+  .head .logo{ font-size:40px; }
+  .head h1{ font-size:28px; font-weight:800; margin-top:8px; letter-spacing:-.3px; }
+  .head p{ color:#8a919c; font-size:14px; font-weight:600; margin-top:6px; }
+  a.card{ display:flex; align-items:center; gap:18px; text-decoration:none; color:inherit;
+    background:#fff; border-radius:24px; padding:22px 22px; margin-bottom:16px;
+    box-shadow:0 8px 22px rgba(17,24,39,.07); position:relative; overflow:hidden; transition:transform .12s; }
+  a.card:active{ transform:scale(.98); }
+  a.card .bar{ position:absolute; left:0; top:0; bottom:0; width:8px; }
+  a.card .ico{ width:58px; height:58px; border-radius:18px; flex-shrink:0; display:flex; align-items:center;
+    justify-content:center; color:#fff; font-size:30px; font-weight:800; }
+  a.card .t{ flex:1; }
+  a.card .t b{ font-size:20px; font-weight:800; display:block; }
+  a.card .t span{ color:#8a919c; font-size:13px; font-weight:600; }
+  a.card .arw{ color:#c4cad3; font-size:22px; }
+  .note{ text-align:center; color:#a0a6b0; font-size:12px; font-weight:600; margin-top:20px; line-height:1.6; }
+  @media (prefers-color-scheme: dark){
+    body{ background:#0f1115; color:#e5e7eb; }
+    a.card{ background:#1a1d23; box-shadow:0 8px 22px rgba(0,0,0,.4); }
+    .head p, a.card .t span, .note{ color:#7a828e; }
+    a.card .arw{ color:#4b5563; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <div class="logo">📖</div>
+      <h1>Match 単語帳</h1>
+      <p>スワイプで覚える 🔥</p>
+    </div>
+
+    <a class="card" href="./VocabMatch.html">
+      <div class="bar" style="background:linear-gradient(160deg,#4f46e5,#3b82f6)"></div>
+      <div class="ico" style="background:linear-gradient(160deg,#4f46e5,#3b82f6)">EN</div>
+      <div class="t"><b>Vocab Match</b><span>英語 · 英検帯レベル別 501語 🔊</span></div>
+      <div class="arw">›</div>
+    </a>
+
+    <a class="card" href="./ChineseMatch.html">
+      <div class="bar" style="background:linear-gradient(160deg,#ef4444,#f59e0b)"></div>
+      <div class="ico" style="background:linear-gradient(160deg,#ef4444,#f59e0b)">中</div>
+      <div class="t"><b>Chinese Match</b><span>中国語 · レベル別＋日常会話 🔊</span></div>
+      <div class="arw">›</div>
+    </a>
+
+    <a class="card" href="./KoreanMatch.html">
+      <div class="bar" style="background:linear-gradient(160deg,#0ea5e9,#6366f1)"></div>
+      <div class="ico" style="background:linear-gradient(160deg,#0ea5e9,#6366f1)">한</div>
+      <div class="t"><b>Korean Match</b><span>韓国語 · レベル別＋日常会話 🔊</span></div>
+      <div class="arw">›</div>
+    </a>
+
+    <a class="card" href="./GermanMatch.html">
+      <div class="bar" style="background:linear-gradient(160deg,#111827,#f59e0b)"></div>
+      <div class="ico" style="background:linear-gradient(160deg,#111827,#f59e0b)">DE</div>
+      <div class="t"><b>German Match</b><span>ドイツ語 · レベル別＋日常会話 🔊</span></div>
+      <div class="arw">›</div>
+    </a>
+
+    <div class="note">進捗はこの端末のブラウザに保存されます<br>ホーム画面に追加するとアプリっぽく使えます</div>
+  </div>
+</body>
+</html>
