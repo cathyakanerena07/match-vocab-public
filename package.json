@@ -1,0 +1,18 @@
+{
+  "name": "match-vocab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Match 単語帳 — スワイプで覚える多言語単語帳",
+  "scripts": {
+    "sync:web": "node scripts/copy-web.mjs",
+    "build": "npm run sync:web && npx cap sync ios",
+    "ios": "npm run build && npx cap open ios"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/ios": "^6.2.0"
+  }
+}

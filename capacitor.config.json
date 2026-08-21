@@ -1,0 +1,9 @@
+{
+  "appId": "com.vocabmatch.app",
+  "appName": "Match単語帳",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#eef0f4"
+  }
+}

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Vocab Match</title>
 <style>
   *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -19,7 +19,7 @@
   .ic{ display:inline-flex; align-items:center; justify-content:center; }
 
   /* header */
-  .top{ display:flex; align-items:center; justify-content:space-between; padding:calc(env(safe-area-inset-top,0px) + 16px) 22px 14px; background:var(--bg); }
+  .top{ display:flex; align-items:center; justify-content:space-between; padding:52px 22px 14px; background:var(--bg); }
   .top .title{ display:flex; align-items:center; gap:8px; font-size:22px; font-weight:900; letter-spacing:-.3px;
     background:none; border:none; color:inherit; cursor:pointer; padding:6px 8px; border-radius:12px; }
   .top .title:active{ background:#e9ebf0; }
@@ -77,8 +77,13 @@
     font-size:19px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(99,102,241,.32); }
   .deck .play:active{ transform:scale(.9); }
 
+  /* ad space */
+  .ad{ margin-top:auto; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:#e9ebef;
+    color:#aab0ba; font-size:12px; font-weight:800; letter-spacing:2px; position:relative; }
+  .ad .x{ position:absolute; right:14px; color:#b8bec8; cursor:pointer; border:none; background:none; font-size:16px; }
+
   /* ---------- GAME ---------- */
-  .g-head{ padding:calc(env(safe-area-inset-top,0px) + 16px) 20px 8px; display:flex; align-items:center; justify-content:space-between; z-index:20; }
+  .g-head{ padding:52px 20px 8px; display:flex; align-items:center; justify-content:space-between; z-index:20; }
   .icon-btn{ width:44px; height:44px; border-radius:999px; border:none; background:#fff; cursor:pointer; font-size:20px;
     color:#475569; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.06); }
   .g-tag{ text-align:right; }
@@ -92,9 +97,9 @@
     align-items:center; justify-content:center; padding:26px; text-align:center; box-shadow:0 20px 50px rgba(15,23,42,.18); }
   .face.front{ background:#fff; border:1px solid #f1f5f9; }
   .face.back{ color:#fff; transform:rotateY(180deg); text-shadow:0 1px 3px rgba(0,0,0,.28); }
-  .front .word{ font-size:38px; font-weight:800; line-height:1.25; color:#1f2937; max-width:100%; overflow-wrap:break-word; }
+  .front .word{ font-size:38px; font-weight:800; line-height:1.25; color:#1f2937; }
   .front .word.sm{ font-size:23px; font-weight:700; line-height:1.45; padding:0 4px; }
-  .back .main{ font-size:60px; font-weight:800; line-height:1.1; max-width:100%; overflow-wrap:break-word; }
+  .back .main{ font-size:60px; font-weight:800; line-height:1.1; }
   .back .main.sm{ font-size:29px; font-weight:700; line-height:1.4; }
   .back .pin{ margin-top:14px; font-size:22px; font-weight:600; opacity:.96; }
   .spk{ border:none; background:rgba(255,255,255,.3); color:#fff; border-radius:999px; cursor:pointer;
@@ -113,7 +118,7 @@
   .stamp{ position:absolute; top:26px; font-size:24px; font-weight:900; padding:6px 13px; border:4px solid; border-radius:12px; opacity:0; transition:opacity .1s; }
   .stamp.got{ left:26px; color:#10b981; border-color:#10b981; transform:rotate(-14deg); }
   .stamp.forgot{ right:26px; color:#f43f5e; border-color:#f43f5e; transform:rotate(14deg); }
-  .g-actions{ display:flex; align-items:flex-start; justify-content:center; gap:26px; padding-bottom:calc(env(safe-area-inset-bottom,0px) + 34px); z-index:20; }
+  .g-actions{ display:flex; align-items:flex-start; justify-content:center; gap:26px; padding-bottom:34px; z-index:20; }
   .fabwrap{ display:flex; flex-direction:column; align-items:center; gap:7px; }
   .fabwrap span{ font-size:11px; font-weight:700; color:#9ca3af; }
   .fab{ border:none; border-radius:999px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
@@ -131,7 +136,7 @@
   .primary:active{ opacity:.85; }
 
   /* ---------- FORM (add/settings/edit) ---------- */
-  .fhead{ display:flex; align-items:center; gap:14px; padding:calc(env(safe-area-inset-top,0px) + 16px) 20px 14px; background:#fff; border-bottom:1px solid var(--line); }
+  .fhead{ display:flex; align-items:center; gap:14px; padding:52px 20px 14px; background:#fff; border-bottom:1px solid var(--line); }
   .fhead h1{ font-size:19px; font-weight:900; }
   .fhead .bk{ border:none; background:none; font-size:22px; cursor:pointer; color:#475569; }
   .fbody{ padding:22px; }
@@ -167,7 +172,7 @@
       <div class="review" id="review">
         <div>
           <h2>復習モード</h2>
-          <p>間隔をあけて復習に出題</p>
+          <p>忘却曲線に基づいて出題</p>
           <button class="start" id="startBtn">▶ START SESSION</button>
         </div>
         <div class="num"><b id="dueTotal">0</b><span>CARDS</span></div>
@@ -175,6 +180,7 @@
       <div class="slabel"><span class="e">🕐</span> YOUR DECKS</div>
       <div class="decks" id="deckList"></div>
     </div>
+    <div class="ad" id="ad">AD SPACE <button class="x" id="adX">✕</button></div>
   </section>
 
   <!-- GAME -->
@@ -335,15 +341,6 @@ function renderCard(){
       ${exBlock}
     </div></div>`;
   s.flipped=false; s.dragX=0; bindCard();
-  fitText($('#card .face.front .word'), 38, 18);
-  fitText($('#card .face.back .main'), 60, 22);
-}
-function fitText(el, max, min){
-  if(!el) return;
-  const box=el.parentElement.clientWidth - 8;
-  let fs=max; el.style.whiteSpace='nowrap'; el.style.fontSize=fs+'px';
-  while(fs>min && el.scrollWidth>box){ fs-=2; el.style.fontSize=fs+'px'; }
-  if(el.scrollWidth>box) el.style.whiteSpace='normal';  // 長い語句は最小サイズで折り返し
 }
 function gMove(e){ if(!session||!session.dragging) return; session.dragX=(px(e)-session.startX)*1.1; paint(); }
 function gUp(){ if(!session||!session.dragging) return; session.dragging=false;
@@ -468,6 +465,7 @@ $('#addBack').onclick=()=>{ if(editCard){ const did=editingDeckId; editCard=null
 $('#aDeck').onchange=toggleNew; $('#aSave').onclick=saveAdd;
 $('#setBack').onclick=goHome; $('#iRun').onclick=runImport; $('#expBtn').onclick=exportAll; $('#resetBtn').onclick=resetAll;
 $('#edBack').onclick=goHome; $('#edAdd').onclick=()=>openAdd(editingDeckId);
+$('#adX').onclick=()=>$('#ad').style.display='none';
 
 // language switcher (4言語)
 const APPS=[
